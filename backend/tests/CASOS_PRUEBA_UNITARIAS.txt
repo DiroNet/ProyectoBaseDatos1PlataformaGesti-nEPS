@@ -1,0 +1,116 @@
+# CASOS DE PRUEBAS UNITARIAS - SISTEMA DE CITAS MÉDICAS
+
+## RESUMEN EJECUTIVO
+- **Total de pruebas:** 54
+- **Pasadas:** 54
+- **Fallidas:** 0
+- **Fecha ejecución:** Mayo 2026
+
+---
+
+## TABLA 1: VALIDACIONES DE DATOS (UT-001 a UT-017)
+
+| ID | Tipo Prueba | Descripción Caso | Datos Entrada | Resultado Esperado | Resultado Real | Estado | Evidencia |
+|----|-----------|-------------------|---------------|-------------------|----------------|--------|-----------|
+| UT-001 | Unitária | Email formato válido | "paciente@test.com" | True | True | PASS | [Captura1.png] |
+| UT-002 | Unitária | Email válido con punto | "juan.perez@hospital.co" | True | True | PASS | [Captura1.png] |
+| UT-003 | Unitária | Email válido Gmail | "usuario@gmail.com" | True | True | PASS | [Captura1.png] |
+| UT-004 | Unitária | Email inválido sin @ | "pacientetest.com" | False | False | PASS | [Captura1.png] |
+| UT-005 | Unitária | Email inválido sin dominio | "paciente@" | False | False | PASS | [Captura1.png] |
+| UT-006 | Unitária | Email inválido vacío | "" | False | False | PASS | [Captura1.png] |
+| UT-007 | Unitária | Email inválido sin extensión | "test@dominio" | False | False | PASS | [Captura1.png] |
+| UT-008 | Unitária | Hora válida inicio 6am | "06:00" | True | True | PASS | [Captura1.png] |
+| UT-009 | Unitária | Hora válida fin 8pm | "20:00" | True | True | PASS | [Captura1.png] |
+| UT-010 | Unitária | Hora válida media jornada | "14:30" | True | True | PASS | [Captura1.png] |
+| UT-011 | Unitária | Hora válida 12pm | "12:00" | True | True | PASS | [Captura1.png] |
+| UT-012 | Unitária | Hora inválida antes 6am | "05:30" | False | False | PASS | [Captura1.png] |
+| UT-013 | Unitária | Hora inválida después 8pm | "20:30" | False | False | PASS | [Captura1.png] |
+| UT-014 | Unitária | Hora inválida 5am | "05:00" | False | False | PASS | [Captura1.png] |
+| UT-015 | Unitária | Hora inválida 9pm | "21:00" | False | False | PASS | [Captura1.png] |
+| UT-016 | Unitária | Hora formato inválido | "8am" | False | False | PASS | [Captura1.png] |
+| UT-017 | Unitária | Hora formato letras | "abc" | False | False | PASS | [Captura1.png] |
+
+---
+
+## TABLA 2: LÓGICA DE NEGOCIO (UT-018 a UT-034)
+
+| ID | Tipo Prueba | Descripción Caso | Datos Entrada | Resultado Esperado | Resultado Real | Estado | Evidencia |
+|----|-----------|-------------------|---------------|-------------------|----------------|--------|-----------|
+| UT-018 | Unitária | Médico tiene disp. lunes | dia_semana=1 | True | True | PASS | [Captura2.png] |
+| UT-019 | Unitária | Médico tiene disp. miércoles | dia_semana=3 | True | True | PASS | [Captura2.png] |
+| UT-020 | Unitária | Día inválido | dia_semana=0 | False | False | PASS | [Captura2.png] |
+| UT-021 | Unitária | Conflicto hora exacta | hora1=10:00, hora2=10:00 | Conflicto | Conflicto | PASS | [Captura2.png] |
+| UT-022 | Unitária | Sin conflicto horas diferentes | hora1=10:00, hora2=11:00 | Sin conflicto | Sin conflicto | PASS | [Captura2.png] |
+| UT-023 | Unitária | No permitir cita fecha pasada |fechaayer < fecha_hoy | Rechazar | Rechazar | PASS | [Captura2.png] |
+| UT-024 | Unitária | Fecha hoy permitida | fecha_hoy | Permitir | Permitir | PASS | [Captura2.png] |
+| UT-025 | Unitária | Fecha futura permitida | fecha+7 días | Permitir | Permitir | PASS | [Captura2.png] |
+| UT-026 | Unitária | Hora fuera horario atención | cita=19:00,fin=17:00 | Rechazar | Rechazar | PASS | [Captura2.png] |
+| UT-027 | Unitária | Hora dentro horario | cita=10:00,inicio=8:00,fin=17:00 | Permitir | Permitir | PASS | [Captura2.png] |
+| UT-028 | Unitária | Hora límite inferior | cita=8:00 | Permitir | Permitir | PASS | [Captura2.png] |
+| UT-029 | Unitária | Hora límite superior | cita=17:00 | Permitir | Permitir | PASS | [Captura2.png] |
+| UT-030 | Unitária | Estados cita válidos | estados=[pendiente,confirmada,cancelada,completada] | Válido | Válido | PASS | [Captura2.png] |
+| UT-031 | Unitária | Día semana válido | dias 1-7 | Válido | Válido | PASS | [Captura2.png] |
+| UT-032 | Unitária | Día semana lunes | dia=1 | Válido | Válido | PASS | [Captura2.png] |
+| UT-033 | Unitária | Día semana domingo | dia=7 | Válido | Válido | PASS | [Captura2.png] |
+| UT-034 | Unitária | Tipos consulta válidos | tipos=[MG,Cardiología,Pediatría] | Válido | Válido | PASS | [Captura2.png] |
+
+---
+
+## TABLA 3: REGLAS DEL DOMINIO (UT-035 a UT-054)
+
+| ID | Tipo Prueba | Descripción Caso | Datos Entrada | Resultado Esperado | Resultado Real | Estado | Evidencia |
+|----|-----------|-------------------|---------------|-------------------|----------------|--------|-----------|
+| UT-035 | Unitária | Médico inactivo flag | activo=False | False | False | PASS | [Captura3.png] |
+| UT-036 | Unitária | Médico activo flag | activo=True | True | True | PASS | [Captura3.png] |
+| UT-037 | Unitária | Verificar estado inactivo | medico_activo=False | No puede atender | No puede atender | PASS | [Captura3.png] |
+| UT-038 | Unitária | Verificar estado activo | medico_activo=True | Puede atender | Puede atender | PASS | [Captura3.png] |
+| UT-039 | Unitária | Cita cancelada no reprogramable | estado='cancelada' | No reprogramable | No reprogramable | PASS | [Captura3.png] |
+| UT-040 | Unitária | Cita pendiente reprogramable | estado='pendiente' | Reprogramable | Reprogramable | PASS | [Captura3.png] |
+| UT-041 | Unitária | Cita confirmada reprogramable | estado='confirmada' | Reprogramable | Reprogramable | PASS | [Captura3.png] |
+| UT-042 | Unitária | Paciente necesita cédula | tiene_cedula=True | Requerido | Requerido | PASS | [Captura3.png] |
+| UT-043 | Unitária | Médico necesita cédula profesional | tiene_cedula=True | Requerido | Requerido | PASS | [Captura3.png] |
+| UT-044 | Unitária | Rol paciente válido | rol='paciente' | Válido | Válido | PASS | [Captura3.png] |
+| UT-045 | Unitária | Rol médico válido | rol='medico' | Válido | Válido | PASS | [Captura3.png] |
+| UT-046 | Unitária | Rol administrador válido | rol='administrador' | Válido | Válido | PASS | [Captura3.png] |
+| UT-047 | Unitária | Horario oficina 6a20 | hora_inicio=6,hora_fin=20 | Válido | Válido | PASS | [Captura3.png] |
+| UT-048 | Unitária | Validar horario lun-vier | dias=[1,2,3,4,5] | Válido | Válido | PASS | [Captura3.png] |
+| UT-049 | Unitária | Password mínimo caracteres | password='123456' | ≥6 caracteres | ≥6 caracteres | PASS | [Captura3.png] |
+| UT-050 | Unitária | Email no duplicado | email_existe=False | No duplicado | No duplicado | PASS | [Captura3.png] |
+| UT-051 | Unitária | Cita tiene paciente | tiene_paciente=True | Requerido | Requerido | PASS | [Captura3.png] |
+| UT-052 | Unitária | Cita tiene médico | tiene_medico=True | Requerido | Requerido | PASS | [Captura3.png] |
+| UT-053 | Unitária | Cita tiene fecha | tiene_fecha=True | Requerido | Requerido | PASS | [Captura3.png] |
+| UT-054 | Unitária | Cita tiene hora | tiene_hora=True | Requerido | Requerido | PASS | [Captura3.png] |
+
+---
+
+## RESUMEN DE COBERTURA
+
+| Categoría | Cantidad Pruebas |
+|-----------|-----------------|
+| Validaciones (Email, Hora) | 17 |
+| Lógica de Negocio | 17 |
+| Reglas del Dominio | 20 |
+| **TOTAL** | **54** |
+
+---
+
+## COMANDOS PARA EJECUTAR
+
+```bash
+# Ejecutar todas las pruebas
+pytest tests/ -v
+
+# Ejecutar por categoría
+pytest tests/test_validaciones.py -v
+pytest tests/test_negocio.py -v
+pytest tests/test_dominio.py -v
+```
+
+---
+
+## EVIDENCIA DE EJECUCIÓN
+
+Adjuntar las siguientes capturas:
+- **Captura1.png**: Resultados test_validaciones.py (17 pruebas)
+- **Captura2.png**: Resultados test_negocio.py (17 pruebas)  
+- **Captura3.png**: Resultados test_dominio.py (20 pruebas)

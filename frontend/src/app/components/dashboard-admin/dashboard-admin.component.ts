@@ -212,17 +212,47 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
   }
 
   agregarMedico(): void {
+    // Validar campos requeridos
+    if (!this.nuevoMedico.email || !this.nuevoMedico.email.includes('@')) {
+      this.showNotify('Ingrese un correo electrónico válido', 'error');
+      return;
+    }
+    if (!this.nuevoMedico.password || this.nuevoMedico.password.length < 6) {
+      this.showNotify('La contraseña debe tener al menos 6 caracteres', 'error');
+      return;
+    }
+    if (!this.nuevoMedico.nombre || this.nuevoMedico.nombre.trim() === '') {
+      this.showNotify('Ingrese el nombre del médico', 'error');
+      return;
+    }
+    if (!this.nuevoMedico.apellido || this.nuevoMedico.apellido.trim() === '') {
+      this.showNotify('Ingrese el apellido del médico', 'error');
+      return;
+    }
+    if (!this.nuevoMedico.telefono || this.nuevoMedico.telefono.trim() === '') {
+      this.showNotify('Ingrese el teléfono del médico', 'error');
+      return;
+    }
+    if (!this.nuevoMedico.cedula_profesional || this.nuevoMedico.cedula_profesional.trim() === '') {
+      this.showNotify('Ingrese la cédula profesional', 'error');
+      return;
+    }
+    if (!this.nuevoMedico.especialidad_id) {
+      this.showNotify('Seleccione una especialidad', 'error');
+      return;
+    }
+
     const espId = this.nuevoMedico.especialidad_id;
     const espSeleccionada = espId ? this.especialidades.find(e => String(e.id) === String(espId)) : null;
     const data = {
-      nombre: this.nuevoMedico.nombre,
-      apellido: this.nuevoMedico.apellido,
-      email: this.nuevoMedico.email,
-      telefono: this.nuevoMedico.telefono,
+      nombre: this.nuevoMedico.nombre.trim(),
+      apellido: this.nuevoMedico.apellido.trim(),
+      email: this.nuevoMedico.email.trim().toLowerCase(),
+      telefono: this.nuevoMedico.telefono?.trim() || '',
       password: this.nuevoMedico.password,
       especialidad: espSeleccionada?.nombre || '',
       especialidad_id: espId ? Number(espId) : null,
-      cedula_profesional: this.nuevoMedico.cedula_profesional
+      cedula_profesional: this.nuevoMedico.cedula_profesional.trim()
     };
     this.api.createMedico(data).subscribe({
       next: () => {

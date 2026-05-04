@@ -45,6 +45,14 @@ def register():
     if data['rol'] == 'paciente' and not data.get('cedula'):
         return jsonify({'error': 'Cédula requerida para pacientes'}), 400
     
+    # Validar fecha de nacimiento para pacientes
+    if data['rol'] == 'paciente' and not data.get('fecha_nacimiento'):
+        return jsonify({'error': 'Fecha de nacimiento requerida para pacientes'}), 400
+    
+    # Validar teléfono para pacientes
+    if data['rol'] == 'paciente' and not data.get('telefono'):
+        return jsonify({'error': 'Teléfono requerido para pacientes'}), 400
+    
     # Validar que la cédula no esté duplicada
     if data['rol'] == 'paciente' and data.get('cedula'):
         cedula_existente = Paciente.query.filter_by(cedula=data['cedula']).first()
@@ -122,7 +130,16 @@ def login():
     
     usuario = Usuario.query.filter_by(email=data['email']).first()
     
-    if not usuario or not bcrypt.check_password_hash(usuario.password, data['password']):
+    if not usuario:
+        return jsonify({'error': 'Credenciales inválidas'}), 401
+    
+    try:
+        password_valido = bcrypt.check_password_hash(usuario.password, data['password'])
+    except Exception:
+        # Si falla bcrypt, probar comparación directa (para usuarios creados manualmente)
+        password_valido = (usuario.password == data['password'])
+    
+    if not password_valido:
         return jsonify({'error': 'Credenciales inválidas'}), 401
     
     if not usuario.activo:
@@ -210,14 +227,24 @@ def delete_usuario(user_id):
     # Buscar y eliminar paciente asociado
     paciente = Paciente.query.filter_by(usuario_id=user_id).first()
     if paciente:
-        Reprogramacion.query.filter_by(paciente_id=paciente.id).delete()
+        # Primero eliminar historial con cita_id
+        citas_paciente = Cita.query.filter_by(paciente_id=paciente.id).all()
+        for c in citas_paciente:
+            HistorialMedico.query.filter_by(cita_id=c.id).delete()
+            Reprogramacion.query.filter_by(cita_id=c.id).delete()
         Cita.query.filter_by(paciente_id=paciente.id).delete()
+        Reprogramacion.query.filter_by(paciente_id=paciente.id).delete()
         HistorialMedico.query.filter_by(paciente_id=paciente.id).delete()
         db.session.delete(paciente)
     
     # Buscar y eliminar médico asociado
     medico = Medico.query.filter_by(usuario_id=user_id).first()
     if medico:
+        # Primero eliminar historial con cita_id
+        citas_medico = Cita.query.filter_by(medico_id=medico.id).all()
+        for c in citas_medico:
+            HistorialMedico.query.filter_by(cita_id=c.id).delete()
+            Reprogramacion.query.filter_by(cita_id=c.id).delete()
         Reprogramacion.query.filter_by(medico_id=medico.id).delete()
         Disponibilidad.query.filter_by(medico_id=medico.id).delete()
         Cita.query.filter_by(medico_id=medico.id).delete()
@@ -234,6 +261,17 @@ def delete_usuario(user_id):
 @app.route('/api/pacientes', methods=['GET'])
 @jwt_required()
 def get_pacientes():
+    current_id = int(get_jwt_identity())
+    current_user = Usuario.query.get(current_id)
+    
+    if current_user.rol.nombre == 'medico':
+        medico = Medico.query.filter_by(usuario_id=current_id).first()
+        if medico:
+            citas = Cita.query.filter_by(medico_id=medico.id).all()
+            paciente_ids = list(set(c.paciente_id for c in citas))
+            pacientes = Paciente.query.filter(Paciente.id.in_(paciente_ids)).all() if paciente_ids else []
+            return jsonify([p.to_dict() for p in pacientes]), 200
+    
     pacientes = Paciente.query.all()
     return jsonify([p.to_dict() for p in pacientes]), 200
 
@@ -314,6 +352,20 @@ def create_medico():
     if current_user.rol.nombre != 'administrador':
         return jsonify({'error': 'No autorizado'}), 403
     
+    # Validar campos requeridos
+    required = ['email', 'password', 'nombre', 'apellido', 'telefono', 'cedula_profesional', 'especialidad_id']
+    for field in required:
+        if not data.get(field):
+            return jsonify({'error': f' Campo {field} requerido'}), 400
+    
+    # Validar email único
+    if Usuario.query.filter_by(email=data['email']).first():
+        return jsonify({'error': 'El email ya está registrado'}), 400
+    
+    # Validar cédula profesional única
+    if Medico.query.filter_by(cedula_profesional=data['cedula_profesional']).first():
+        return jsonify({'error': 'La cédula profesional ya está registrada'}), 400
+    
     # Buscar o crear el rol de médico
     rol_medico = Rol.query.filter_by(nombre='medico').first()
     if not rol_medico:
@@ -333,15 +385,16 @@ def create_medico():
             nombre_especialidad = data['especialidad']
     
     # Crear el usuario del médico
+    hashed = bcrypt.generate_password_hash(data['password']).decode('utf-8')
     nuevo_usuario = Usuario(
         email=data['email'],
+        password=hashed,
         nombre=data['nombre'],
         apellido=data['apellido'],
         telefono=data.get('telefono', ''),
         rol_id=rol_medico.id,
         activo=True
     )
-    nuevo_usuario.set_password(data['password'])
     db.session.add(nuevo_usuario)
     db.session.flush()
     
@@ -353,6 +406,18 @@ def create_medico():
         activo=True
     )
     db.session.add(nuevo_medico)
+    db.session.flush()
+    
+    # Crear disponibilidad por defecto: Lun-Vier de 8am a 5pm
+    for dia in range(1, 6):  # Lunes a viernes (1-5)
+        disp = Disponibilidad(
+            medico_id=nuevo_medico.id,
+            dia_semana=dia,
+            hora_inicio=time(8, 0),
+            hora_fin=time(17, 0)
+        )
+        db.session.add(disp)
+    
     db.session.commit()
     
     return jsonify(nuevo_medico.to_dict()), 201
@@ -454,6 +519,9 @@ def update_disponibilidad(disp_id):
 @app.route('/api/citas', methods=['GET'])
 @jwt_required()
 def get_citas():
+    current_id = int(get_jwt_identity())
+    current_user = Usuario.query.get(current_id)
+    
     paciente_id = request.args.get('paciente_id')
     medico_id = request.args.get('medico_id')
     fecha = request.args.get('fecha')
@@ -461,10 +529,23 @@ def get_citas():
     
     query = Cita.query
     
-    if paciente_id:
-        query = query.filter_by(paciente_id=paciente_id)
-    if medico_id:
-        query = query.filter_by(medico_id=medico_id)
+    # Si es paciente, solo mostrar sus citas
+    if current_user.rol.nombre == 'paciente':
+        paciente = Paciente.query.filter_by(usuario_id=current_id).first()
+        if paciente:
+            query = query.filter_by(paciente_id=paciente.id)
+    # Si es médico, solo mostrar sus citas
+    elif current_user.rol.nombre == 'medico':
+        medico = Medico.query.filter_by(usuario_id=current_id).first()
+        if medico:
+            query = query.filter_by(medico_id=medico.id)
+    # Administrador puede filtrar por parámetros específicos
+    else:
+        if paciente_id:
+            query = query.filter_by(paciente_id=paciente_id)
+        if medico_id:
+            query = query.filter_by(medico_id=medico_id)
+    
     if fecha:
         query = query.filter_by(fecha=datetime.strptime(fecha, '%Y-%m-%d').date())
     if estado:
@@ -501,6 +582,10 @@ def create_cita():
     
     if fecha_cita < date.today():
         return jsonify({'error': 'No se pueden agendar citas en fechas pasadas'}), 400
+    
+    # Si es hoy, validar que la hora no haya pasado
+    if fecha_cita == date.today() and hora_cita <= datetime.now().time():
+        return jsonify({'error': 'No se pueden agendar citas para una hora que ya pasó'}), 400
     
     dia_semana = fecha_cita.isoweekday()
     if dia_semana > 7:
@@ -668,6 +753,14 @@ def create_reprogramacion():
     
     nueva_fecha = datetime.strptime(data['nueva_fecha'], '%Y-%m-%d').date()
     nueva_hora = datetime.strptime(data['nueva_hora'], '%H:%M').time()
+    
+    # Validar que la nueva fecha no sea pasada
+    if nueva_fecha < date.today():
+        return jsonify({'error': 'No se puede reprogramar para una fecha pasada'}), 400
+    
+    # Si es la misma fecha, validar que la hora no sea pasada
+    if nueva_fecha == date.today() and nueva_hora <= datetime.now().time():
+        return jsonify({'error': 'No se puede reprogramar para una hora que ya pasó'}), 400
     
     disponibilidad = Disponibilidad.query.filter_by(
         medico_id=cita.medico_id, 

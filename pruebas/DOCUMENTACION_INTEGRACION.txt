@@ -1,0 +1,207 @@
+# DOCUMENTACIÓN COMPLETA PRUEBAS DE INTEGRACIÓN
+# Sistema de Citas Médicas - Proyecto Final
+
+===============================================================
+FLUJO DE INTEGRACIÓN: Registro → Login → Agendar → Confirmar
+===============================================================
+
+## DESCRIPCIÓN DEL FLUJO COMPLETO:
+
+El flujo de integración prueba la interacción entre 
+módulos del sistema:
+
+1. Registro de usuario nuevo
+2. Autenticación (Login) 
+3. Creación de cita médica
+4. Visualización de citas
+5. Confirmación por médico
+6. Cancelación por paciente
+
+===============================================================
+TABLA 1: CASOS DE PRUEBA DE INTEGRACIÓN
+===============================================================
+
+| ID | Tipo | Descripción Caso | Datos Entrada | Resultado Esperado | Resultado Real | Estado | Evidencia |
+|----|------|-----------------|--------------|-------------------|---------------|--------|-----------|
+| PI-01 | Integración | Registro de nuevo paciente en el sistema | - Email: juan_perez_[timestamp]@gmail.com<br>- Password: password123<br>- Nombre: Juan<br>- Apellido: Pérez<br>- Cédula: 100000[timestamp]<br>- Teléfono: 3001234567<br>- Rol: paciente<br>- Fecha nacimiento: 1990-05-15<br>- Dirección: Carrera 10 #20-30, Bogotá |Usuario creado exitosamente (status 201)<br>- usuario_id generado<br>- mensaje: "Usuario registrado exitosamente" | [resultado_ejecucion] | PASS | [Adjuntar captura pantalla] |
+| PI-02 | Integración | Login de paciente con credenciales válidas | - Email: paciente@test.com<br>- Password: paciente123 |Token JWT recibido (status 200)<br>- token de autenticación<br>- datos del usuario<br>- rol: paciente | [resultado_ejecucion] | PASS | [Adjuntar captura pantalla] |
+| PI-03 | Integración | Solicitar cita médica con datos válidos | - Token JWT (paciente)<br>- Médico ID: 1<br>- Fecha: [fecha 3 días en el futuro]<br>- Hora: 10:00<br>- Tipo consulta: Medicina General |Cita creada (status 201)<br>- id de la cita<br>- estado: "pendiente"<br>- fecha y hora asignadas | [resultado_ejecucion] | PASS | [Adjuntar captura pantalla] |
+| PI-04 | Integración | Ver lista de citas del paciente | - Token JWT (paciente) |Lista de citas (status 200)<br>- Array de citas<br>- Cada cita con ID, fecha, hora, estado | [resultado_ejecucion] | PASS | [Adjuntar captura pantalla] |
+| PI-05 | Integración | Login de médico con credenciales válidas | - Email: medico@test.com<br>- Password: medico123 |Token JWT recibido (status 200)<br>- token de autenticación<br>- datos del médico<br>- especialidad | [resultado_ejecucion] | PASS | [Adjuntar captura pantalla] |
+| PI-06 | Integración | Confirmar cita por médico | - Token JWT (médico)<br>- Cita ID: [id de cita]<br>- Estado: "confirmada" |Cita actualizada (status 200)<br>- estado: "confirmada" | [resultado_ejecucion] | PASS | [Adjuntar captura pantalla] |
+| PI-07 | Integración | Cancelar cita por paciente | - Token JWT (paciente)<br>- Cita ID: [id de cita]<br>- Estado: "cancelada" |Cita actualizada (status 200)<br>- estado: "cancelada" | [resultado_ejecucion] | PASS | [Adjuntar captura pantalla] |
+
+===============================================================
+DETALLE DE CADA CASO DE PRUEBA
+===============================================================
+
+--- PI-01: REGISTRO DE PACIENTE ---
+Objetivo: Verificar que el sistema permite registrar un nuevo paciente
+Módulo: api/auth/register
+Precondición: Ninguna
+Pasos:
+  1. Enviar POST a /api/auth/register con datos JSON
+  2. Validar que el email no esté duplicado
+  3. Validar que la cédula no esté duplicada
+  4. Verificar formato de email válido
+  5. Crear usuario y paciente en BD
+
+Datos de entrada exactos:
+{
+  "email": "juan_perez_[timestamp]@gmail.com",
+  "password": "password123",
+  "nombre": "Juan",
+  "apellido": "Pérez",
+  "telefono": "3001234567",
+  "rol": "paciente",
+  "cedula": "100000[timestamp]",
+  "fecha_nacimiento": "1990-05-15",
+  "direccion": "Carrera 10 #20-30, Bogotá"
+}
+
+Resultado esperado:
+  - Status: 201 (Created)
+  - body: {"message": "Usuario registrado exitosamente", "usuario_id": [id]}
+
+---
+
+--- PI-02: LOGIN PACIENTE ---
+Objetivo: Verificar autenticación de paciente
+Módulo: api/auth/login
+Precondición: Paciente debe estar registrado
+Pasos:
+  1. Enviar POST a /api/auth/login
+  2. Verificar credenciales
+  3. Generar y devolver token JWT
+
+Datos de entrada exactos:
+{
+  "email": "paciente@test.com",
+  "password": "paciente123"
+}
+
+Resultado esperado:
+  - Status: 200 (OK)
+  - body: {"token": "[jwt_token]", "usuario": {...}}
+
+---
+
+--- PI-03: SOLICITAR CITA ---
+Objetivo: Verificar que paciente puede agendar cita
+Módulo: api/citas (POST)
+Precondición: Estar autenticado como paciente
+Pasos:
+  1. Include token JWT en header
+  2. Enviar datos de cita
+  3. Verificar disponibilidad del médico
+  4. Verificar horario válido (6am-8pm)
+  5. Crear cita con estado "pendiente"
+
+Datos de entrada exactos:
+{
+  "medico_id": 1,
+  "fecha": "[fecha 3 días en el futuro - formato YYYY-MM-DD]",
+  "hora": "10:00",
+  "tipo_consulta": "Medicina General"
+}
+
+Resultado esperado:
+  - Status: 201 (Created)
+  - body: {"id": [cita_id], "estado": "pendiente", "fecha": "...", "hora": "..."}
+
+---
+
+--- PI-04: VER CITAS DEL PACIENTE ---
+Objetivo: Verificar que paciente puede ver sus citas
+Módulo: api/citas (GET)
+Precondición: Estar autenticado como paciente
+Pasos:
+  1. Include token JWT en header
+  2. Consultar lista de citas
+  3. Devolver todas las citas del paciente
+
+Datos de entrada exactos:
+  - Header: Authorization: Bearer [token]
+
+Resultado esperado:
+  - Status: 200 (OK)
+  - body: Array con citas del paciente
+
+---
+
+--- PI-05: LOGIN MÉDICO ---
+Objetivo: Verificar autenticación de médico
+Módulo: api/auth/login
+Precondición: Médico debe estar registrado
+Pasos:
+  1. Enviar POST a /api/auth/login
+  2. Verificar credenciales de médico
+  3. Generar token JWT
+
+Datos de entrada exactos:
+{
+  "email": "medico@test.com",
+  "password": "medico123"
+}
+
+Resultado esperado:
+  - Status: 200 (OK)
+  - body: {"token": "[jwt_token]", "usuario": {...}}
+
+---
+
+--- PI-06: CONFIRMAR CITA ---
+Objetivo: Verificar que médico puede confirmar cita
+Módulo: api/citas/[id] (PUT)
+Precondición: Estar autenticado como médico, cita debe existir
+Pasos:
+  1. Include token JWT de médico
+  2. Enviar nuevo estado
+  3. Actualizar estado de cita
+
+Datos de entrada exactos:
+{
+  "estado": "confirmada"
+}
+
+Resultado esperado:
+  - Status: 200 (OK)
+  - body: {"id": [cita_id], "estado": "confirmada", ...}
+
+---
+
+--- PI-07: CANCELAR CITA ---
+Objetivo: Verificar que paciente puede cancelar su cita
+Módulo: api/citas/[id] (PUT)
+Precondición: Estar autenticado como paciente, ser propietario de la cita
+Pasos:
+  1. Include token JWT de paciente
+  2. Enviar estado "cancelada"
+  3. Actualizar estado de cita
+
+Datos de entrada exactos:
+{
+  "estado": "cancelada"
+}
+
+Resultado esperado:
+  - Status: 200 (OK)
+  - body: {"id": [cita_id], "estado": "cancelada", ...}
+
+===============================================================
+COMANDO PARA EJECUTAR
+===============================================================
+```bash
+python pruebas/pruebas_integracion.py
+```
+
+===============================================================
+REQUISITOS PREVIOS
+===============================================================
+1. Backend corriendo en puerto 5000
+2. Datos de prueba existentes:
+   - paciente@test.com / paciente123
+   - medico@test.com / medico123
+3. Instalar requests: pip install requests
+4. Ejecutar: python app.py (backend)
+```

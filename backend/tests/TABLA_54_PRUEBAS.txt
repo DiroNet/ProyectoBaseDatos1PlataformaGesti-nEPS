@@ -1,0 +1,96 @@
+# TABLA 54 CASOS PRUEBAS UNITARIAS - COMPLETA
+
+## test_validaciones.py (17 pruebas: UT-01 a UT-17)
+
+| ID | Descripción Caso | Datos Entrada | Resultado Esperado | Resultado Real | Estado | Evidencia |
+|----|-----------------|---------------|-------------------|----------------|--------|------------|
+| UT-01 | Email formato válido | paciente@test.com | True | PASS | [img] |
+| UT-02 | Email válido con punto | juan.perez@hospital.co | True | PASS | [img] |
+| UT-03 | Email válido Gmail | usuario@gmail.com | True | PASS | [img] |
+| UT-04 | Email inválido sin @ | pacientetest.com | False | PASS | [img] |
+| UT-05 | Email inválido sin dominio | paciente@ | False | PASS | [img] |
+| UT-06 | Email inválido vacío | (vacío) | False | PASS | [img] |
+| UT-07 | Email inválido sin extensión | test@dominio | False | PASS | [img] |
+| UT-08 | Hora válida inicio 6am | 06:00 | True | PASS | [img] |
+| UT-09 | Hora válida fin 8pm | 20:00 | True | PASS | [img] |
+| UT-10 | Hora válida media jornada | 14:30 | True | PASS | [img] |
+| UT-11 | Hora válida 12pm | 12:00 | True | PASS | [img] |
+| UT-12 | Hora inválida antes 6am | 05:30 | False | PASS | [img] |
+| UT-13 | Hora inválida después 8pm | 20:30 | False | PASS | [img] |
+| UT-14 | Hora inválida 5am | 05:00 | False | PASS | [img] |
+| UT-15 | Hora inválida 9pm | 21:00 | False | PASS | [img] |
+| UT-16 | Hora formato inválido | 8am | False | PASS | [img] |
+| UT-17 | Hora formato letras | abc | False | PASS | [img] |
+
+## test_negocio.py (17 pruebas: UT-18 a UT-34)
+
+| ID | Descripción Caso | Datos Entrada | Resultado Esperado | Resultado Real | Estado | Evidencia |
+|----|-----------------|---------------|-------------------|----------------|--------|------------|
+| UT-18 | Médico tiene disp. lunes | dia=1 | True | PASS | [img] |
+| UT-19 | Médico tiene disp. miércoles | dia=3 | True | PASS | [img] |
+| UT-20 | Día inválido | dia=0 | False | PASS | [img] |
+| UT-21 | Conflicto hora exacta | hora1=10:00, hora2=10:00 | Conflicto | PASS | [img] |
+| UT-22 | Sin conflicto horas diferentes | hora1=10:00, hora2=11:00 | Sin conflicto | PASS | [img] |
+| UT-23 | No permitir cita fecha pasada | fechaayer <ahoy | Rechazar | PASS | [img] |
+| UT-24 | Fecha hoy permitida | fecha_hoy | Permitir | PASS | [img] |
+| UT-25 | Fecha futura permitida | fecha+7 días | Permitir | PASS | [img] |
+| UT-26 | Hora fuera horario atención | cita=19:00,fin=17:00 | Rechazar | PASS | [img] |
+| UT-27 | Hora dentro horario | cita=10:00,inicio=8:00,fin=17:00 | Permitir | PASS | [img] |
+| UT-28 | Hora límite inferior | cita=8:00 | Permitir | PASS | [img] |
+| UT-29 | Hora límite superior | cita=17:00 | Permitir | PASS | [img] |
+| UT-30 | Estados cita válidos | estados=válidos | Válido | PASS | [img] |
+| UT-31 | Día semana válido | dias 1-7 | Válido | PASS | [img] |
+| UT-32 | Día semana lunes | dia=1 | Válido | PASS | [img] |
+| UT-33 | Día semana domingo | dia=7 | Válido | PASS | [img] |
+| UT-34 | Tipos consulta válidos | tipos=[MG,Cardiología] | Válido | PASS | [img] |
+
+## test_dominio.py (20 pruebas: UT-35 a UT-54)
+
+| ID | Descripción Caso | Datos Entrada | Resultado Esperado | Resultado Real | Estado | Evidencia |
+|----|-----------------|---------------|-------------------|----------------|--------|------------|
+| UT-35 | Médico inactivo flag | activo=False | False | PASS | [img] |
+| UT-36 | Médico activo flag | activo=True | True | PASS | [img] |
+| UT-37 | Verificar estado inactivo | medico_activo=False | No atender | PASS | [img] |
+| UT-38 | Verificar estado activo | medico_activo=True | Atender | PASS | [img] |
+| UT-39 | Cita cancelada no reprogramable | estado='cancelada' | No Reprogramable | PASS | [img] |
+| UT-40 | Cita pendiente reprogramable | estado='pendiente' | Reprogramable | PASS | [img] |
+| UT-41 | Cita confirmada reprogramable | estado='confirmada' | Reprogramable | PASS | [img] |
+| UT-42 | Paciente necesita cédula | tiene_cedula=True | Requerido | PASS | [img] |
+| UT-43 | Médico necesita cédula profesional | tiene_cedula=True | Requerido | PASS | [img] |
+| UT-44 | Rol paciente válido | rol='paciente' | Válido | PASS | [img] |
+| UT-45 | Rol médico válido | rol='medico' | Válido | PASS | [img] |
+| UT-46 | Rol administrador válido | rol='administrador' | Válido | PASS | [img] |
+| UT-47 | Horario oficina 6a20 | hora_inicio=6,hora_fin=20 | Válido | PASS | [img] |
+| UT-48 | Validar horario lun-vier | dias=[1,2,3,4,5] | Válido | PASS | [img] |
+| UT-49 | Password mínimo caracteres | password='123456' | ≥6 | PASS | [img] |
+| UT-50 | Email no duplicado | email_existe=False | No duplicado | PASS | [img] |
+| UT-51 | Cita tiene paciente | tiene_paciente=True | Requerido | PASS | [img] |
+| UT-52 | Cita tiene médico | tiene_medico=True | Requerido | PASS | [img] |
+| UT-53 | Cita tiene fecha | tiene_fecha=True | Requerido | PASS | [img] |
+| UT-54 | Cita tiene hora | tiene_hora=True | Requerido | PASS | [img] |
+
+---
+
+## RESUMEN
+
+| Archivo | Pruebas | Rango ID |
+|---------|--------|----------|
+| test_validaciones.py | 17 | UT-01 a UT-17 |
+| test_negocio.py | 17 | UT-18 a UT-34 |
+| test_dominio.py | 20 | UT-35 a UT-54 |
+| **TOTAL** | **54** | |
+
+---
+
+## COMANDOS PARA EJECUTAR
+
+```bash
+# Comando 1 (17 pruebas) - Captura1.png
+pytest tests/test_validaciones.py -v
+
+# Comando 2 (17 pruebas) - Captura2.png
+pytest tests/test_negocio.py -v
+
+# Comando 3 (20 pruebas) - Captura3.png
+pytest tests/test_dominio.py -v
+```

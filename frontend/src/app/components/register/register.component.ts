@@ -59,6 +59,20 @@ export class RegisterComponent {
       return;
     }
 
+    if (!this.fecha_nacimiento) {
+      this.error = 'Por favor ingrese su fecha de nacimiento';
+      this.loading = false;
+      this.showNotify(this.error, 'error');
+      return;
+    }
+
+    if (!this.telefono) {
+      this.error = 'Por favor ingrese su teléfono';
+      this.loading = false;
+      this.showNotify(this.error, 'error');
+      return;
+    }
+
     const data: any = {
       rol: 'paciente',
       email: this.email,
