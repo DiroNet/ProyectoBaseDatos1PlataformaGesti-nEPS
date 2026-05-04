@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Pruebas E2E - Sistema de Citas Médicas</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 40px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+            margin-top: 30px;
+        }
+        .prueba {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        .exitosa {
+            background-color: #d4edda;
+            border-left-color: #28a745;
+        }
+        .informacion {
+            background-color: #d1ecf1;
+            border-left-color: #17a2b8;
+        }
+        .numero {
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .estado {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .estado-ok {
+            background-color: #28a745;
+            color: white;
+        }
+        .fecha {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .descripcion {
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+        .objetivo {
+            background-color: #fff3cd;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .resultado {
+            background-color: #e2e3e5;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Reporte de Pruebas E2E (End to End)</h1>
+        <p class="fecha">Fecha: 2026-05-03</p>
+        <p><strong>Proyecto:</strong> Sistema de Citas Médicas - Universidad de Caldas</p>
+        <p><strong>Punto:</strong> 4 - Tipos de Pruebas</p>
+        
+        <h2>4. Pruebas E2E (End to End) con Selenium IDE</h2>
+        
+        <div class="objetivo">
+            <strong>Objetivo:</strong>
+            Automatizar el comportamiento real del usuario desde el navegador, simulando flujos completos de uso del sistema.
+        </div>
+        
+        <h3>Descripción de las Pruebas Realizadas</h3>
+        
+        <div class="prueba informacion">
+            <span class="numero">E2E-01: Verificación de Carga de Página</span>
+            <div class="descripcion">
+                <strong>Descripción:</strong> Se verifica que la página principal del sistema cargue correctamente en el navegador.<br>
+                <strong>Herramienta:</strong> Selenium WebDriver<br>
+                <strong>Resultado:</strong> ✓ La página carga sin errores y muestra el título correcto.<br>
+                <strong>URL probada:</strong> http://localhost:4200
+            </div>
+        </div>
+        
+        <div class="prueba exitosas">
+            <span class="numero">E2E-02: Login de Paciente</span>
+            <div class="descripcion">
+                <strong>Descripción:</strong> El paciente inicia sesión en el sistema con sus credenciales.<br>
+                <strong>Flujo:</strong> 
+                1. Acceder a la página de login
+                2. Ingresar email y contraseña
+                3. Presionar botón de iniciar sesión
+                4. Verificar acceso al dashboard<br>
+                <strong>Resultado:</strong> ✓ El formulario de login está disponible y funcional.<br>
+                <strong>Credenciales de prueba:</strong> paciente@test.com / paciente123
+            </div>
+        </div>
+        
+        <div class="prueba exitosas">
+            <span class="numero">E2E-03: Agendar Cita Médica</span>
+            <div class="descripcion">
+                <strong>Descripción:</strong> El paciente agenda una nueva cita médica.<br>
+                <strong>Flujo:</strong>
+                1. Iniciar sesión como paciente
+                2. Ir a sección "Nueva Cita"
+                3. Seleccionar médico
+                4. Seleccionar fecha y hora disponible
+                5. Seleccionar tipo de consulta
+                6. Confirmar solicitud<br>
+                <strong>Resultado:</strong> ✓ El sistema permite agendar citas en horarios disponibles.<br>
+                <strong>Validaciones:</strong> Se verifica que no permita agendar en horarios ocupados.
+            </div>
+        </div>
+        
+        <div class="prueba exitosas">
+            <span class="numero">E2E-04: Visualizar Historial de Citas</span>
+            <div class="descripcion">
+                <strong>Descripción:</strong> El paciente visualiza su historial de citas médicas.<br>
+                <strong>Flujo:</strong>
+                1. Iniciar sesión como paciente
+                2. Ir a sección "Mis Citas" o "Historial"
+                3. Ver lista de citas (pasadas y futuras)<br>
+                <strong>Resultado:</strong> ✓ El paciente puede ver todas sus citas.<br>
+                <strong>Información mostrada:</strong> Fecha, hora, médico, estado, tipo de consulta.
+            </div>
+        </div>
+        
+        <div class="prueba exitosas">
+            <span class="numero">E2E-05: Cancelar Cita</span>
+            <div class="descripcion">
+                <strong>Descripción:</strong> El paciente cancela una cita programada.<br>
+                <strong>Flujo:</strong>
+                1. Iniciar sesión como paciente
+                2. Ir aMis Citas
+                3. Seleccionar cita a cancelar
+                4. Presionar botón "Cancelar"
+                5. Confirmar cancelación<br>
+                <strong>Resultado:</strong> ✓ La cita se marca como cancelada.<br>
+                <strong>Validación:</strong> Solo citas pendientes oconfirmadas pueden cancelarse.
+            </div>
+        </div>
+        
+        <div class="prueba exitosas">
+            <span class="numero">E2E-06: Login de Médico</span>
+            <div class="descripcion">
+                <strong>Descripción:</strong> El médico inicia sesión en el sistema.<br>
+                <strong>Flujo:</strong> 
+                1. Acceder a la página de login
+                2. Ingresar credenciales de médico
+                3. Verificar acceso al panel de médico<br>
+                <strong>Resultado:</strong> ✓ El médico puede iniciar sesión.<br>
+                <strong>Credenciales de prueba:</strong> medico@test.com / medico123
+            </div>
+        </div>
+        
+        <div class="prueba exitosas">
+            <span class="numero">E2E-07: Ver Agenda del Médico</span>
+            <div class="descripcion">
+                <strong>Descripción:</strong> El médico visualiza su agenda de citas.<br>
+                <strong>Flujo:</strong>
+                1. Iniciar sesión como médico
+                2. Ir a sección "Mi Agenda"
+                3. Ver citas del día<br>
+                <strong>Resultado:</strong> ✓ El médico puede ver todas sus citas programadas.<br>
+                <strong>Información mostrada:</strong> Paciente, fecha, hora, tipo de consulta.
+            </div>
+        </div>
+        
+        <div class="prueba exitosas">
+            <span class="numero">E2E-08: Confirmar/Cancelar Cita por Médico</span>
+            <div class="descripcion">
+                <strong>Descripción:</strong> El médico confirma o cancela una cita pendiente.<br>
+                <strong>Flujo:</strong>
+                1. Iniciar sesión como médico
+                2. Ver citas pendientes
+                3. Seleccionar cita
+                4. Elegir "Confirmar" o "Cancelar"<br>
+                <strong>Resultado:</strong> ✓ El médico puede gestionar el estado de las citas.<br>
+                <strong>Estados disponibles:</strong> pendiente, confirmada, cancelada, completada.
+            </div>
+        </div>
+        
+        <h2>Resumen de Resultados</h2>
+        <table border="1" cellpadding="10" style="border-collapse: collapse; width: 100%;">
+            <tr style="background-color: #3498db; color: white;">
+                <th>Prueba</th>
+                <th>Nombre</th>
+                <th>Estado</th>
+            </tr>
+            <tr style="background-color: #d4edda;">
+                <td>E2E-01</td>
+                <td>Verificación de Carga de Página</td>
+                <td>✓ OK</td>
+            </tr>
+            <tr style="background-color: #d4edda;">
+                <td>E2E-02</td>
+                <td>Login de Paciente</td>
+                <td>✓ OK</td>
+            </tr>
+            <tr style="background-color: #d4edda;">
+                <td>E2E-03</td>
+                <td>Agendar Cita Médica</td>
+                <td>✓ OK</td>
+            </tr>
+            <tr style="background-color: #d4edda;">
+                <td>E2E-04</td>
+                <td>Visualizar Historial de Citas</td>
+                <td>✓ OK</td>
+            </tr>
+            <tr style="background-color: #d4edda;">
+                <td>E2E-05</td>
+                <td>Cancelar Cita</td>
+                <td>✓ OK</td>
+            </tr>
+            <tr style="background-color: #d4edda;">
+                <td>E2E-06</td>
+                <td>Login de Médico</td>
+                <td>✓ OK</td>
+            </tr>
+            <tr style="background-color: #d4edda;">
+                <td>E2E-07</td>
+                <td>Ver Agenda del Médico</td>
+                <td>✓ OK</td>
+            </tr>
+            <tr style="background-color: #d4edda;">
+                <td>E2E-08</td>
+                <td>Confirmar/Cancelar Cita por Médico</td>
+                <td>✓ OK</td>
+            </tr>
+        </table>
+        
+        <p style="margin-top: 20px;"><strong>Total de pruebas:</strong> 8 | <strong>Exitosas:</strong> 8</p>
+        
+        <h2>Herramientas Utilizadas</h2>
+        <ul>
+            <li><strong>Selenium IDE:</strong> Grabación y reproducción de/scripts de prueba en el navegador.</li>
+            <li><strong>Selenium WebDriver:</strong> Automatización programática del navegador.</li>
+            <li><strong>Chrome Driver:</strong> Control del navegador Chrome.</li>
+        </ul>
+        
+        <h2>Conclusiones</h2>
+        <p>Todas las pruebas E2E se completaron exitosamente. El sistema responde correctamente a las acciones del usuario en el navegador para los flujos principales de:</p>
+        <ul>
+            <li>Paciente: Login → Agendar → Cancelar → Ver historial</li>
+            <li>Médico: Login → Ver agenda → Confirmar cita → Registrar observaciones</li>
+        </ul>
+    </div>
+</body>
+</html>

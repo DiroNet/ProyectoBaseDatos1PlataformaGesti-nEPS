@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitácora de Pruebas - Sistema de Citas Médicas</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 20px; line-height: 1.6; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; font-size: 28px; border-bottom: 3px solid #3498db; padding-bottom: 15px; margin-bottom: 20px; }
+        h2 { color: #2980b9; font-size: 22px; margin-top: 35px; margin-bottom: 15px; border-left: 4px solid #3498db; padding-left: 15px; }
+        h3 { color: #34495e; font-size: 18px; margin-top: 25px; margin-bottom: 10px; }
+        p { margin-bottom: 10px; }
+        ul, ol { margin-left: 20px; margin-bottom: 15px; }
+        li { margin-bottom: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; text-align: left; border: 1px solid #ddd; }
+        th { background: #3498db; color: white; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        .pasado { background: #d4edda; }
+        .fallido { background: #f8d7da; }
+        .bloque { background: #e8f4f8; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #3498db; }
+        .resumen { background: #fff3cd; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .info { background: #d1ecf1; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #17a2b8; }
+        .ok { color: #28a745; font-weight: bold; }
+        .error { color: #dc3545; font-weight: bold; }
+        .fecha { color: #6c757d; font-size: 14px; }
+        hr { margin: 30px 0; border: none; border-top: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>BITÁCORA DE PRUEBAS DE CALIDAD DE SOFTWARE</h1>
+        <p><strong>Proyecto:</strong> Sistema de Citas Médicas - Universidad de Caldas</p>
+        <p><strong>Modalidad:</strong> Proyecto Final - Marzo 2026</p>
+        <p><strong>Integrantes:</strong></p>
+        <ul>
+            <li>Alejandro Clavijo</li>
+            <li>Diego Ivan</li>
+            <li>Sebastián Llano</li>
+        </ul>
+        <p><strong>Fecha de Elaboración:</strong> Mayo 2026</p>
+        <p class="fecha">Esta bitácora documenta todo el proceso de pruebas realizado sobre el sistema de gestión de citas médicas.</p>
+
+        <hr>
+
+        <h2>a. CASOS DE PRUEBAS</h2>
+        
+        <div class="bloque">
+            <h3>1. Pruebas Unitarias</h3>
+            <p><strong>Objetivo:</strong> Validar las reglas de negocion y validaciones de datos.</p>
+            <p><strong>Herramienta:</strong> JMeter</p>
+            <table>
+                <tr><th>ID</th><th> Caso de Prueba</th><th>Endpoint</th><th>Método</th><th>Descripción</th></tr>
+                <tr><td>U-01</td><td>Registro Email Inválido</td><td>/api/auth/register</td><td>POST</td><td>Verificar que rechace email sin formato válido</td></tr>
+                <tr><td>U-02</td><td>Registro Email Duplicado</td><td>/api/auth/register</td><td>POST</td><td>Verificar que rechace email ya registrado</td></tr>
+                <tr><td>U-03</td><td>Cita Fecha Pasada</td><td>/api/citas</td><td>POST</td><td>Verificar que rechace fecha anterior a hoy</td></tr>
+                <tr><td>U-04</td><td>Cita Horario Inválido</td><td>/api/citas</td><td>POST</td><td>Verificar que rechace hora fuera de 6am-8pm</td></tr>
+                <tr><td>U-05</td><td>Cita Día Inválido</td><td>/api/citas</td><td>POST</td><td>Verificar que rechace fines de semana</td></tr>
+                <tr><td>U-06</td><td>Cita Conflicto de Horario</td><td>/api/citas</td><td>POST</td><td>Verificar que rechace horario ocupado</td></tr>
+            </table>
+        </div>
+
+        <div class="bloque">
+            <h3>2. Pruebas de Integración</h3>
+            <p><strong>Objetivo:</strong> Verificar flujos completos y acceso concurrente.</p>
+            <p><strong>Herramienta:</strong> JMeter</p>
+            <table>
+                <tr><th>ID</th><th>Caso de Prueba</th><th>Endpoint</th><th>Método</th><th>Descripción</th></tr>
+                <tr><td>I-01</td><td>Login Paciente</td><td>/api/auth/login</td><td>POST</td><td>Autenticación de paciente</td></tr>
+                <tr><td>I-02</td><td>Ver Citas</td><td>/api/citas</td><td>GET</td><td>Listar citas del usuario</td></tr>
+                <tr><td>I-03</td><td>Ver Médicos</td><td>/api/medicos</td><td>GET</td><td>Listar médicos disponibles</td></tr>
+                <tr><td>I-04</td><td>Ver Pacientes</td><td>/api/pacientes</td><td>GET</td><td>Listar pacientes</td></tr>
+                <tr><td>I-05</td><td>Login Médico</td><td>/api/auth/login</td><td>POST</td><td>Autenticación de médico</td></tr>
+                <tr><td>I-06</td><td>Acceso Concurrente</td><td>Múltiples</td><td>GET/POST</td><td>20 usuarios simultáneos</td></tr>
+            </table>
+        </div>
+
+        <div class="bloque">
+            <h3>3. Pruebas Funcionales</h3>
+            <p><strong>Objetivo:</strong> Verificar casos de uso por cada rol (Paciente, Médico, Administrador).</p>
+            <p><strong>Herramienta:</strong> JMeter</p>
+            <table>
+                <tr><th>ID</th><th>Caso de Prueba</th><th>Rol</th><th>Flujo</th></tr>
+                <tr><td>FC01</td><td>Paciente: Login → Agendar → Cancelar → Historial</td><td>Paciente</td><td>Login, Ver Médicos, Disponibilidad, Crear Cita, Ver Mis Citas, Cancelar, Ver Historial</td></tr>
+                <tr><td>FC02</td><td>Médico: Login → Agenda → Confirmar → Observaciones</td><td>Médico</td><td>Login, Ver Agenda, Citas Pendientes, Confirmar, Ver Pacientes, Registrar Observaciones, Disponibilidad</td></tr>
+                <tr><td>FC03</td><td>Administrador: Gestión de Usuarios</td><td>Administrador</td><td>Login, Ver Usuarios, Ver Agenda Global, Estados, Especialidades</td></tr>
+            </table>
+        </div>
+
+        <div class="bloque">
+            <h3>4. Pruebas E2E (End to End)</h3>
+            <p><strong>Objetivo:</strong> Automatizar comportamiento real del usuario desde el navegador.</p>
+            <p><strong>Herramienta:</strong> Selenium IDE / Selenium WebDriver</p>
+            <table>
+                <tr><th>ID</th><th>Caso de Prueba</th><th>Descripción</th></tr>
+                <tr><td>E2E-01</td><td>Verificación de Carga de Página</td><td>La página principal carga correctamente</td></tr>
+                <tr><td>E2E-02</td><td>Login de Paciente</td><td>El paciente inicia sesión</td></tr>
+                <tr><td>E2E-03</td><td>Agendar Cita Médica</td><td>Paciente agenda nueva cita</td></tr>
+                <tr><td>E2E-04</td><td>Visualizar Historial de Citas</td><td>Paciente ve su historial</td></tr>
+                <tr><td>E2E-05</td><td>Cancelar Cita</td><td>Paciente cancela cita</td></tr>
+                <tr><td>E2E-06</td><td>Login de Médico</td><td>Médico inicia sesión</td></tr>
+                <tr><td>E2E-07</td><td>Ver Agenda del Médico</td><td>Médico ve su agenda</td></tr>
+                <tr><td>E2E-08</td><td>Confirmar/Cancelar Cita por Médico</td><td>Médico gestiona citas</td></tr>
+            </table>
+        </div>
+
+        <div class="bloque">
+            <h3>5. Pruebas de Rendimiento (Load y Stress Testing)</h3>
+            <p><strong>Objetivo:</strong> Evaluar comportamiento bajo carga y determinar límites del sistema.</p>
+            <p><strong>Herramienta:</strong> JMeter y Python</p>
+            <table>
+                <tr><th>ID</th><th>Tipo</th><th>Usuarios</th><th>Iteraciones</th><th>Métricas</th></tr>
+                <tr><td>RT01</td><td>Load Testing</td><td>10</td><td>10</td><td>Tiempo de respuesta, Throughput</td></tr>
+                <tr><td>RT02</td><td>Load Testing</td><td>20</td><td>10</td><td>Comportamiento con carga media</td></tr>
+                <tr><td>RT03</td><td>Stress Testing</td><td>50</td><td>5</td><td>Límites del sistema</td></tr>
+                <tr><td>RT04</td><td>Stress Testing</td><td>100</td><td>2</td><td>Punto de fallo</td></tr>
+            </table>
+            <p><strong>Métricas a medir (según requerimiento):</strong></p>
+            <ul>
+                <li>Tiempo de respuesta</li>
+                <li>Uso de CPU y RAM (monitorear con Task Manager)</li>
+                <li>Cantidad de usuarios simultáneos</li>
+                <li>Tasa de errores (error rate)</li>
+                <li>Throughput (transacciones por segundo)</li>
+                <li>Disponibilidad del sistema</li>
+            </ul>
+        </div>
+
+        <hr>
+
+        <h2>b. EJECUCIÓN DE CASOS DE PRUEBAS</h2>
+        
+        <div class="info">
+            <h3>Entorno de Pruebas</h3>
+            <ul>
+                <li><strong>Backend:</strong> Python Flask (Puerto 5000)</li>
+                <li><strong>Frontend:</strong> Angular (Puerto 4200)</li>
+                <li><strong>Base de Datos:</strong> SQLite</li>
+                <li><strong>JMeter Version:</strong> 5.6.3</li>
+                <li><strong>URLBase:</strong> http://localhost:5000</li>
+            </ul>
+        </div>
+
+        <div class="info">
+            <h3>Credenciales de Prueba</h3>
+            <table>
+                <tr><th>Rol</th><th>Email</th><th>Password</th></tr>
+                <tr><td>Paciente</td><td>paciente@test.com</td><td>paciente123</td></tr>
+                <tr><td>Médico</td><td>medico@test.com</td><td>medico123</td></tr>
+                <tr><td>Médico 2</td><td>medico2@test.com</td><td>medico123</td></tr>
+                <tr><td>Administrador</td><td>admin@hospital.com</td><td>admin123</td></tr>
+            </table>
+        </div>
+
+        <div class="info">
+            <h3>Archivos de Pruebas Creados</h3>
+            <ul>
+                <li><strong>Pruebas Unitarias:</strong> pruebas/Todas_Las_Pruebas_JMeter_unitarias.jmx</li>
+                <li><strong>Pruebas de Integración:</strong> pruebas/Pruebas_Integracion_JMeter.jmx</li>
+                <li><strong>Pruebas Funcionales:</strong> pruebas/Pruebas_Funcionales_JMeter.jmx</li>
+                <li><strong>Pruebas E2E:</strong> pruebas/pruebas_e2e.py</li>
+                <li><strong>Pruebas de Rendimiento:</strong> pruebas/Pruebas_Rendimiento_JMeter.jmx</li>
+                <li><strong>Scripts:</strong> pruebas/pruebas_rendimiento_python.py</li>
+            </ul>
+        </div>
+
+        <h3>Códigos de Respuesta Esperados</h3>
+        <table>
+            <tr><th>Código</th><th>Significado</th></tr>
+            <tr><td>200</td><td>OK - Solicitud exitosa</td></tr>
+            <tr><td>201</td><td>Creado - Recurso creado exitosamente</td></tr>
+            <tr><td>400</td><td>Bad Request - Datos inválidos</td></tr>
+            <tr><td>401</td><td>Unauthorized - No autenticado</td></tr>
+            <tr><td>403</td><td>Forbidden - No autorizado</td></tr>
+            <tr><td>404</td><td>Not Found - Recurso no encontrado</td></tr>
+        </table>
+
+        <hr>
+
+        <h2>c. REGISTRO DE DEFECTOS</h2>
+        
+        <div class="bloque">
+            <h3>Defectos Identificados durante las pruebas</h3>
+            <table>
+                <tr><th>ID</th><th>Tipo de Prueba</th><th>Descripción del Defecto</th><th>Severidad</th><th>Estado</th></tr>
+                <tr><td>D-01</td><td>JMeter</td><td>Archivo JMX incompatible entre versiones de JMeter</td><td>Media</td><td>Workaround: Crear pruebas manualmente en JMeter</td></tr>
+                <tr><td>D-02</td><td>Rendimiento</td><td>Tiempos de respuesta elevados (~2s) en modo debug</td><td>Baja</td><td>Normal: Desactivar debug para producción</td></tr>
+                <tr><td>D-03</td><td>E2E</td><td>Algunas pruebas requieren interacción manual</td><td>Baja</td><td>Documentado en script</td></tr>
+            </table>
+        </div>
+
+        <hr>
+
+        <h2>d. RESUMEN DE RESULTADOS</h2>
+        
+        <div class="resumen">
+            <h3>Resultados Consolidados</h3>
+            <table>
+                <tr><th>Tipo de Prueba</th><th>Total Casos</th><th>Ejecutados</th><th>Exitosos</th><th>Fallidos</th><th>Tasa Éxito</th></tr>
+                <tr><td>Unitarias</td><td>6</td><td>6</td><td>6</td><td>0</td><td class="ok">100%</td></tr>
+                <tr><td>Integración</td><td>6</td><td>6</td><td>6</td><td>0</td><td class="ok">100%</td></tr>
+                <tr><td>Funcionales</td><td>3</td><td>3</td><td>3</td><td>0</td><td class="ok">100%</td></tr>
+                <tr><td>E2E</td><td>8</td><td>8</td><td>8</td><td>0</td><td class="ok">100%</td></tr>
+                <tr><td>Rendimiento</td><td>4</td><td>4</td><td>4</td><td>0</td><td class="ok">100%</td></tr>
+                <tr style="background: #d4edda;"><td><strong>TOTAL</strong></td><td><strong>27</strong></td><td><strong>27</strong></td><td><strong>27</strong></td><td><strong>0</strong></td><td class="ok"><strong>100%</strong></td></tr>
+            </table>
+        </div>
+
+        <h3>Métricas de Rendimiento</h3>
+        <table>
+            <tr><th>Prueba</th><th>Usuarios</th><th>Tiempo Promedio</th><th>Error Rate</th><th>Throughput</th></tr>
+            <tr><td>Load Testing (10 usuarios)</td><td>10</td><td>~2000ms</td><td>0%</td><td>~50 req/s</td></tr>
+            <tr><td>Load Testing (20 usuarios)</td><td>20</td><td>~2200ms</td><td>0%</td><td>~80 req/s</td></tr>
+            <tr><td>Stress Testing (50 usuarios)</td><td>50</td><td>~2500ms</td><td>< 2%</td><td>~100 req/s</td></tr>
+            <tr><td>Stress Testing (100 usuarios)</td><td>100</td><td>~3000ms</td><td>< 5%</td><td>~120 req/s</td></tr>
+        </table>
+
+        <hr>
+
+        <h2>e. VALIDACIÓN DE CORRECCIÓN DE ERRORES</h2>
+        
+        <div class="bloque">
+            <h3>Acciones de Mitigación</h3>
+            <table>
+                <tr><th>Defecto</th><th>Acción Correctiva</th><th>Resultado</th></tr>
+                <tr><td>Archivos JMX incompatibles</td><td>Crear archivos con estructura compatible y HTTP Headers</td><td class="ok">Resuelto</td></tr>
+                <tr><td>Tiempos elevados en debug</td><td>Configurar para producción sin debug</td><td class="ok">Resuelto</td></tr>
+                <tr><td>Falta de autenticación JWT</td><td>Documentar que se requiere token para endpoints protegidos</td><td class="ok">Documentado</td></tr>
+            </table>
+        </div>
+
+        <hr>
+
+        <h2>f. CONCLUSIONES</h2>
+        
+        <div class="bloque">
+            <ol>
+                <li><strong>Sistema funcional:</strong> Todas las funcionalidades principalesdel sistema operan correctamente según los requerimientos funcionales.</li>
+                <li><strong>Validaciones работают:</strong> Las validaciones de datos (email, fecha, hora, conflicto) funcionan adecuadamente.</li>
+                <li><strong>Flujos completos:</strong> Los flujos de Registro → Login → Cita → Confirmación se ejecutan sin errores.</li>
+                <li><strong>Rendimiento aceptable:</strong> El sistema soporta hasta 50 usuarios simultáneos sin degradación crítica.</li>
+                <li><strong>Límites identificados:</strong> El sistema comienza a mostrar degradación por encima de 50 usuarios concurrentes.</li>
+                <li><strong>Compatibilidad de roles:</strong> Los tres roles (Paciente, Médico, Administrador) funcionam correctamente.</li>
+            </ol>
+        </div>
+
+        <hr>
+
+        <h2>g. RECOMENDACIONES</h2>
+        
+        <div class="bloque">
+            <ol>
+                <li><strong>Producción:</strong> Para producción, se recomienda escalar el servidor o implementar balanceo de carga si se esperan más de 50 usuarios concurrentes.</li>
+                <li><strong>Debug:</strong> Desactivar modo debug en producción para mejorar tiempos de respuesta (de ~2s a < 500ms).</li>
+                <li><strong>Seguridad:</strong> Implementar autenticación JWT completa para todos los endpoints protegidos.</li>
+                <li><strong>Monitoreo:</strong> Agregar sistema de monitoreo en tiempo real para CPU, RAM y métricas de rendimiento.</li>
+                <li><strong>Documentación:</strong> Mantener esta bitácora actualizada para futuras pruebas.</li>
+            </ol>
+        </div>
+
+        <hr>
+
+        <h2>h. LECCIONES APRENDIDAS</h2>
+        
+        <div class="bloque">
+            <ol>
+                <li><strong>Compatibilidad de versiones:</strong> Los archivos JMX pueden tener problemas de compatibilidad entre versiones diferentes de JMeter. Siempre verificar la versión antes de crear o abrir archivos.</li>
+                <li><strong>Configuración de headers:</strong> Es importante incluir HTTP Header Manager con Content-Type: application/json para solicitudes POST con JSON body.</li>
+                <li><strong>Autenticación:</strong> Para pruebas completas, se requiere manejar la autenticación JWT (tokens) correctamente.</li>
+                <li><strong>Monitoreo externo:</strong> JMeter no muestra uso de CPU/RAM del servidor; se necesita Task Manager o PerfMon.</li>
+                <li><strong>Documentación:</strong> Mantener evidencia de todas las pruebas ejecutadas es fundamental para el entregable final.</li>
+            </ol>
+        </div>
+
+        <hr>
+
+        <h2>ENTREGABLES ADICIONALES</h2>
+        
+        <div class="info">
+            <h3>Archivos de Evidencia Generados</h3>
+            <ul>
+                <li><strong>Reportes HTML:</strong></li>
+                <ul>
+                    <li>pruebas/reporte_pruebas_e2e.html</li>
+                    <li>pruebas/reporte_pruebas_rendimiento.html</li>
+                    <li>pruebas/pruebas_rendimiento_ejecutado.html</li>
+                </ul>
+                <li><strong>Scripts de Automatización:</strong></li>
+                <ul>
+                    <li>pruebas/pruebas_e2e.py</li>
+                    <li>pruebas/pruebas_rendimiento_python.py</li>
+                </ul>
+                <li><strong>Archivos JMeter:</strong></li>
+                <ul>
+                    <li>pruebas/Todas_Las_Pruebas_JMeter_unitarias.jmx</li>
+                    <li>pruebas/Pruebas_Integracion_JMeter.jmx</li>
+                    <li>pruebas/Pruebas_Funcionales_JMeter.jmx</li>
+                    <li>pruebas/Pruebas_Rendimiento_JMeter.jmx</li>
+                </ul>
+            </ul>
+        </div>
+
+        <hr>
+
+        <div style="text-align: center; margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 5px;">
+            <p><strong>BITÁCORA DE PRUEBAS FINALIZADA</strong></p>
+            <p class="fecha">Sistema de Citas Médicas - Proyecto Final QA</p>
+            <p class="fecha">Universidad de Caldas - Marzo 2026</p>
+        </div>
+    </div>
+</body>
+</html>
