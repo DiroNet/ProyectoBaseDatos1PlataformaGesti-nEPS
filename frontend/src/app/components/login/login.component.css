@@ -1,0 +1,251 @@
+.auth-container {
+  display: flex;
+  min-height: 100vh;
+  background: #FFFFFF;
+}
+
+.auth-left {
+  flex: 1;
+  background: linear-gradient(135deg, #0D47A1 0%, #1565C0 50%, #1976D2 100%);
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-left::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
+}
+
+.auth-branding {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 60px;
+}
+
+.brand-title {
+  font-size: 48px;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin: 0;
+  letter-spacing: 2px;
+}
+
+.brand-subtitle {
+  font-size: 18px;
+  color: rgba(255,255,255,0.7);
+  margin: 8px 0 0 0;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+}
+
+.brand-description {
+  margin-top: 30px;
+}
+
+.brand-description p {
+  color: rgba(255,255,255,0.9);
+  font-size: 20px;
+  margin: 0;
+  font-weight: 500;
+}
+
+.brand-description p:last-child {
+  color: rgba(255,255,255,0.6);
+  font-size: 14px;
+  font-weight: 400;
+  margin-top: 8px;
+}
+
+.auth-features {
+  position: relative;
+  z-index: 1;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+  color: rgba(255,255,255,0.8);
+}
+
+.feature-item i {
+  width: 40px;
+  height: 40px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.feature-item span {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.auth-right {
+  width: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: #F8FAFC;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+}
+
+.auth-card h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1A1A1A;
+  margin: 0 0 30px 0;
+}
+
+.auth-form {
+  margin-bottom: 25px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #E2E8F0;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background: #FFFFFF;
+  color: #1A1A1A;
+}
+
+.form-group input:focus {
+  border-color: #0D47A1;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(13, 71, 161, 0.1);
+}
+
+.form-group input::placeholder {
+  color: #94A3B8;
+}
+
+.btn-auth {
+  width: 100%;
+  padding: 16px;
+  background: #0D47A1;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+}
+
+.btn-auth:hover {
+  background: #1565C0;
+}
+
+.btn-auth:disabled {
+  background: #94A3B8;
+  cursor: not-allowed;
+}
+
+.alert-error {
+  background: #FEF2F2;
+  color: #DC2626;
+  padding: 14px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  margin-bottom: 20px;
+  border-left: 4px solid #DC2626;
+}
+
+.auth-link {
+  text-align: center;
+  color: #64748B;
+  font-size: 14px;
+}
+
+.auth-link a {
+  color: #0D47A1;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-link a:hover {
+  text-decoration: underline;
+}
+
+/* SPINNER */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* NOTIFICATIONS */
+.notification {
+  padding: 14px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.notification.success {
+  background: #D1FAE5;
+  color: #059669;
+  border-left: 4px solid #059669;
+}
+
+.notification.error {
+  background: #FEE2E2;
+  color: #DC2626;
+  border-left: 4px solid #DC2626;
+}
+
+.notification i {
+  font-size: 18px;
+}

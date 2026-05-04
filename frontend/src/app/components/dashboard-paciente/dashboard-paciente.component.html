@@ -1,0 +1,159 @@
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2 class="sidebar-title">Bienestar</h2>
+      <p class="sidebar-subtitle">Centro Médico</p>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <a [class.active]="activeTab === 'citas'" (click)="activeTab = 'citas'" class="nav-item">
+        <i class="fas fa-calendar-check"></i>
+        <span>Mis Citas</span>
+      </a>
+      <a [class.active]="activeTab === 'agendar'" (click)="activeTab = 'agendar'" class="nav-item">
+        <i class="fas fa-calendar-plus"></i>
+        <span>Agendar Cita</span>
+      </a>
+      <a [class.active]="activeTab === 'historial'" (click)="activeTab = 'historial'" class="nav-item">
+        <i class="fas fa-file-medical-alt"></i>
+        <span>Historial Médico</span>
+      </a>
+    </nav>
+    
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar">
+          <i class="fas fa-user"></i>
+        </div>
+        <div class="user-info">
+          <p class="user-name">{{ user?.nombre }}</p>
+          <p class="user-role">Paciente</p>
+        </div>
+      </div>
+      <button (click)="logout()" class="btn-logout">
+        <i class="fas fa-sign-out-alt"></i>
+        Cerrar Sesión
+      </button>
+    </div>
+  </aside>
+  
+  <main class="main-content">
+    <div *ngIf="showNotification" [class]="'notification ' + notificationType">
+      <i [class]="notificationType === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
+      {{ notificationMessage }}
+    </div>
+    
+    <div class="content-header">
+      <h1 class="page-title">Mis Citas Médicas</h1>
+      <span class="badge">{{ citas.length }} cita(s)</span>
+    </div>
+    
+    <!-- Mis Citas -->
+    <div *ngIf="activeTab === 'citas'" class="tab-content">
+      <div *ngIf="citas.length === 0" class="empty-state">
+        <i class="fas fa-calendar-times"></i>
+        <p>No tiene citas agendadas</p>
+        <button class="btn-primary" (click)="activeTab = 'agendar'">Agendar Primera Cita</button>
+      </div>
+      
+      <div class="citas-grid">
+        <div *ngFor="let cita of citas" class="cita-card" [class]="cita.estado">
+          <div class="cita-header">
+            <span class="status-badge">{{ cita.estado }}</span>
+            <span class="cita-fecha">
+              <i class="fas fa-calendar-alt"></i> {{ cita.fecha }} - {{ cita.hora }}
+            </span>
+          </div>
+          <div class="cita-body">
+            <p class="doctor"><i class="fas fa-user-md"></i> Dr. {{ cita.medico?.usuario?.nombre }} {{ cita.medico?.usuario?.apellido }}</p>
+            <p class="specialty"><i class="fas fa-stethoscope"></i> {{ cita.medico?.especialidad }}</p>
+            <p class="type"><i class="fas fa-sticky-note"></i> {{ cita.tipo_consulta }}</p>
+          </div>
+          <div class="cita-actions" *ngIf="cita.estado === 'pendiente' || cita.estado === 'confirmada'">
+            <button class="btn-cancel" (click)="cancelarCita(cita.id)">Cancelar Cita</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Agendar Cita -->
+    <div *ngIf="activeTab === 'agendar'" class="tab-content">
+      <div *ngIf="message" [class]="messageType === 'success' ? 'alert-success' : 'alert-error'">
+        {{ message }}
+      </div>
+      
+      <form (ngSubmit)="agendarCita()" class="appointment-form">
+        <div class="form-group">
+          <label>Seleccionar Médico:</label>
+          <select [(ngModel)]="nuevaCita.medico_id" name="medico_id" required>
+            <option value="">-- Seleccionar médico --</option>
+            <option *ngFor="let m of medicos" [value]="m.id">
+              Dr. {{ m.usuario?.nombre }} {{ m.usuario?.apellido }} - {{ m.especialidad }}
+            </option>
+          </select>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Fecha:</label>
+            <input type="date" [(ngModel)]="nuevaCita.fecha" name="fecha" required [min]="minDate">
+          </div>
+          
+          <div class="form-group">
+            <label>Hora:</label>
+            <select [(ngModel)]="nuevaCita.hora" name="hora" required>
+              <option value="">-- Seleccionar --</option>
+              <option value="08:00">08:00 AM</option>
+              <option value="09:00">09:00 AM</option>
+              <option value="10:00">10:00 AM</option>
+              <option value="11:00">11:00 AM</option>
+              <option value="12:00">12:00 PM</option>
+              <option value="13:00">01:00 PM</option>
+              <option value="14:00">02:00 PM</option>
+              <option value="15:00">03:00 PM</option>
+              <option value="16:00">04:00 PM</option>
+              <option value="17:00">05:00 PM</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Tipo de Consulta:</label>
+          <select [(ngModel)]="nuevaCita.tipo_consulta" name="tipo_consulta">
+            <option value="Medicina General">Medicina General</option>
+            <option value="Medicina Interna">Medicina Interna</option>
+            <option value="Pediatría">Pediatría</option>
+            <option value="Ginecología">Ginecología</option>
+            <option value="Cardiología">Cardiología</option>
+          </select>
+        </div>
+        
+        <button type="submit" [disabled]="loading" class="btn-submit">
+          <span *ngIf="loading" class="spinner"></span>
+          {{ loading ? 'Agendando...' : 'Confirmar Cita' }}
+        </button>
+      </form>
+    </div>
+    
+    <!-- Historial Médico -->
+    <div *ngIf="activeTab === 'historial'" class="tab-content">
+      <div *ngIf="historial.length === 0" class="empty-state">
+        <i class="fas fa-file-medical-alt"></i>
+        <p>No hay registros en el historial médico</p>
+      </div>
+      
+      <div class="historial-list">
+        <div *ngFor="let h of historial" class="historial-card">
+          <div class="historial-header">
+            <span class="date"><i class="fas fa-calendar"></i> {{ h.fecha_registro | date:'mediumDate' }}</span>
+          </div>
+          <div class="historial-body">
+            <p><strong>Diagnóstico:</strong> {{ h.diagnostico }}</p>
+            <p *ngIf="h.tratamiento"><strong>Tratamiento:</strong> {{ h.tratamiento }}</p>
+            <p *ngIf="h.observaciones"><strong>Observaciones:</strong> {{ h.observaciones }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

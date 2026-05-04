@@ -1,0 +1,208 @@
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="logo-icon">
+          <i class="fas fa-hospital"></i>
+        </div>
+        <div class="logo-text">
+          <h2>Bienestar</h2>
+          <p>Médico</p>
+        </div>
+      </div>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <a [class.active]="activeTab === 'agenda'" (click)="activeTab = 'agenda'" class="nav-item">
+        <i class="fas fa-calendar-alt"></i>
+        <span>Agenda</span>
+      </a>
+      <a [class.active]="activeTab === 'disponibilidad'" (click)="activeTab = 'disponibilidad'" class="nav-item">
+        <i class="fas fa-clock"></i>
+        <span>Disponibilidad</span>
+      </a>
+      <a [class.active]="activeTab === 'historial'" (click)="activeTab = 'historial'" class="nav-item">
+        <i class="fas fa-file-medical"></i>
+        <span>Historial</span>
+      </a>
+    </nav>
+    
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar">
+          <i class="fas fa-user-md"></i>
+        </div>
+        <div class="user-info">
+          <p class="user-name">Dr. {{ user?.nombre }} {{ user?.apellido }}</p>
+          <p class="user-role">Médico</p>
+        </div>
+      </div>
+      <button (click)="logout()" class="btn-logout">
+        <i class="fas fa-sign-out-alt"></i>
+        Cerrar Sesión
+      </button>
+    </div>
+  </aside>
+  
+  <main class="main-content">
+    <div *ngIf="showNotification" [class]="'notification ' + notificationType">
+      <i [class]="notificationType === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
+      {{ notificationMessage }}
+    </div>
+    
+    <!-- Agenda -->
+    <div *ngIf="activeTab === 'agenda'" class="tab-content">
+      <div class="content-header">
+        <h1 class="page-title">Citas del Día</h1>
+        <span class="badge">{{ citas.length }} cita(s)</span>
+      </div>
+      
+      <div class="filters-bar">
+        <div class="filter-group">
+          <label>Fecha:</label>
+          <input type="date" [(ngModel)]="filterFecha" (change)="loadCitas()">
+        </div>
+      </div>
+      
+      <div *ngIf="citas.length === 0" class="empty-state">
+        <i class="fas fa-calendar-times"></i>
+        <p>No hay citas para esta fecha</p>
+      </div>
+      
+      <div class="citas-grid">
+        <div *ngFor="let cita of citas" class="cita-card" [class]="cita.estado">
+          <div class="cita-header">
+            <span class="status-badge">{{ cita.estado }}</span>
+            <span class="cita-hora">
+              <i class="fas fa-clock"></i> {{ cita.hora }}
+            </span>
+          </div>
+          <div class="cita-body">
+            <p class="patient"><strong>Paciente:</strong> {{ cita.paciente?.usuario?.nombre }} {{ cita.paciente?.usuario?.apellido }}</p>
+            <p><strong>Tipo:</strong> {{ cita.tipo_consulta }}</p>
+            <p *ngIf="cita.observaciones" class="obs"><strong>Obs. anteriores:</strong> {{ cita.observaciones }}</p>
+          </div>
+          <div class="cita-actions" *ngIf="cita.estado === 'pendiente'">
+            <button class="btn-confirm" (click)="confirmarCita(cita.id)">Confirmar</button>
+            <button class="btn-reject" (click)="rechazarCita(cita.id)">Rechazar</button>
+          </div>
+          <div class="cita-actions" *ngIf="cita.estado === 'confirmada'">
+            <button class="btn-complete" (click)="completarCita(cita.id)">Marcar Completada</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Disponibilidad -->
+    <div *ngIf="activeTab === 'disponibilidad'" class="tab-content">
+      <div class="content-header">
+        <h1 class="page-title">Gestionar Disponibilidad</h1>
+      </div>
+      
+      <form (ngSubmit)="agregarDisponibilidad()" class="disp-form">
+        <div class="form-group">
+          <label>Día:</label>
+          <select [(ngModel)]="nuevaDisp.dia_semana" name="dia_semana" required>
+            <option value="1">Lunes</option>
+            <option value="2">Martes</option>
+            <option value="3">Miércoles</option>
+            <option value="4">Jueves</option>
+            <option value="5">Viernes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Inicio:</label>
+          <select [(ngModel)]="nuevaDisp.hora_inicio" name="hora_inicio" required>
+            <option value="06:00">06:00 AM</option>
+            <option value="07:00">07:00 AM</option>
+            <option value="08:00">08:00 AM</option>
+            <option value="09:00">09:00 AM</option>
+            <option value="10:00">10:00 AM</option>
+            <option value="11:00">11:00 AM</option>
+            <option value="12:00">12:00 PM</option>
+            <option value="13:00">01:00 PM</option>
+            <option value="14:00">02:00 PM</option>
+            <option value="15:00">03:00 PM</option>
+            <option value="16:00">04:00 PM</option>
+            <option value="17:00">05:00 PM</option>
+            <option value="18:00">06:00 PM</option>
+            <option value="19:00">07:00 PM</option>
+            <option value="20:00">08:00 PM</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fin:</label>
+          <select [(ngModel)]="nuevaDisp.hora_fin" name="hora_fin" required>
+            <option value="07:00">07:00 AM</option>
+            <option value="08:00">08:00 AM</option>
+            <option value="09:00">09:00 AM</option>
+            <option value="10:00">10:00 AM</option>
+            <option value="11:00">11:00 AM</option>
+            <option value="12:00">12:00 PM</option>
+            <option value="13:00">01:00 PM</option>
+            <option value="14:00">02:00 PM</option>
+            <option value="15:00">03:00 PM</option>
+            <option value="16:00">04:00 PM</option>
+            <option value="17:00">05:00 PM</option>
+            <option value="18:00">06:00 PM</option>
+            <option value="19:00">07:00 PM</option>
+            <option value="20:00">08:00 PM</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-add">Agregar Horario</button>
+      </form>
+      
+      <h3 class="section-title">Horarios Actuales</h3>
+      <div class="disp-list">
+        <div *ngFor="let d of disponibilidad" class="disp-item" [class.inactive]="!d.activo">
+          <span class="day">{{ getDiaNombre(d.dia_semana) }}</span>
+          <span class="hours">{{ d.hora_inicio }} - {{ d.hora_fin }}</span>
+          <button (click)="toggleDisponibilidad(d)" [class]="d.activo ? 'btn-inactive' : 'btn-active'">
+            {{ d.activo ? 'Desactivar' : 'Activar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Registrar Historial -->
+    <div *ngIf="activeTab === 'historial'" class="tab-content">
+      <div class="content-header">
+        <h1 class="page-title">Registrar Historial Médico</h1>
+      </div>
+      
+      <form (ngSubmit)="registrarHistorial()" class="historial-form">
+        <div class="form-group">
+          <label>Paciente:</label>
+          <select [(ngModel)]="nuevoHistorial.paciente_id" name="paciente_id" required>
+            <option value="">-- Seleccionar paciente --</option>
+            <option *ngFor="let p of pacientes" [value]="p.id">
+              {{ p.usuario?.nombre }} {{ p.usuario?.apellido }}
+            </option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Diagnóstico:</label>
+          <textarea [(ngModel)]="nuevoHistorial.diagnostico" name="diagnostico" 
+                    required rows="3" placeholder="Ingrese el diagnóstico..."></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label>Tratamiento:</label>
+          <textarea [(ngModel)]="nuevoHistorial.tratamiento" name="tratamiento" 
+                    rows="3" placeholder="Ingrese el tratamiento..."></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label>Observaciones:</label>
+          <textarea [(ngModel)]="nuevoHistorial.observaciones" name="observaciones" 
+                    rows="2" placeholder="Observaciones adicionales..."></textarea>
+        </div>
+        
+        <button type="submit" [disabled]="loading" class="btn-submit">
+          {{ loading ? 'Guardando...' : 'Guardar Historial' }}
+        </button>
+      </form>
+    </div>
+  </main>
+</div>
