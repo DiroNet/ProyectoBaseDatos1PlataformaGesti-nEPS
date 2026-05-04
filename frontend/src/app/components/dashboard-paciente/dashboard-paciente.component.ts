@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
+import { DataRefreshService } from '../../services/data-refresh.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard-paciente',
@@ -12,7 +14,7 @@ import { ApiService } from '../../services/api.service';
   templateUrl: './dashboard-paciente.component.html',
   styleUrl: './dashboard-paciente.component.css'
 })
-export class DashboardPacienteComponent implements OnInit {
+export class DashboardPacienteComponent implements OnInit, OnDestroy {
   user: any;
   activeTab = 'citas';
   citas: any[] = [];
@@ -23,6 +25,7 @@ export class DashboardPacienteComponent implements OnInit {
   loading = false;
   message = '';
   messageType = '';
+  private refreshSub: Subscription | null = null;
   showNotification = false;
   notificationType = '';
   notificationMessage = '';
@@ -33,6 +36,14 @@ export class DashboardPacienteComponent implements OnInit {
   
   nuevaCita: any = { medico_id: '', fecha: '', hora: '', tipo_consulta: '' };
   minDate = new Date().toISOString().split('T')[0];
+  
+  // Reprogramación
+  showReprogramar = false;
+  citaReprogramar: any = null;
+  nuevaFecha = '';
+  nuevaHora = '';
+  motivoReprogramacion = '';
+  loadingReprogramar = false;
 
   showNotify(message: string, type: string, duration = 3000): void {
     this.notificationMessage = message;
@@ -41,7 +52,12 @@ export class DashboardPacienteComponent implements OnInit {
     setTimeout(() => this.showNotification = false, duration);
   }
 
-  constructor(private authService: AuthService, private api: ApiService, private router: Router) {}
+  constructor(
+    private authService: AuthService, 
+    private api: ApiService, 
+    private router: Router,
+    private refreshService: DataRefreshService
+  ) {}
 
   ngOnInit(): void {
     this.user = this.authService.getUser();
@@ -53,6 +69,15 @@ export class DashboardPacienteComponent implements OnInit {
     this.loadMedicos();
     this.loadEspecialidades();
     this.loadHistorial();
+    
+    this.refreshSub = this.refreshService.refresh$.subscribe((type: string) => {
+      if (type === 'citas' || type === 'all') this.loadCitas();
+      if (type === 'historial' || type === 'all') this.loadHistorial();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.refreshSub?.unsubscribe();
   }
 
   loadHistorial(): void {
@@ -126,6 +151,7 @@ export class DashboardPacienteComponent implements OnInit {
         this.nuevaCita = { medico_id: '', fecha: '', hora: '', tipo_consulta: '' };
         this.medicosFiltrados = [];
         this.loadCitas();
+        this.refreshService.triggerRefresh('citas');
         this.activeTab = 'citas';
       },
       error: (err: any) => {
@@ -149,6 +175,7 @@ export class DashboardPacienteComponent implements OnInit {
       next: () => {
         this.showNotify('Cita cancelada correctamente', 'success');
         this.loadCitas();
+        this.refreshService.triggerRefresh('citas');
       },
       error: (err: any) => this.showNotify(err.error?.error || 'Error al cancelar', 'error')
     });
@@ -160,6 +187,46 @@ export class DashboardPacienteComponent implements OnInit {
   cerrarModal(): void {
     this.showConfirmCancel = false;
     this.citaAEliminar = null;
+  }
+
+  abrirReprogramar(cita: any): void {
+    this.citaReprogramar = cita;
+    this.nuevaFecha = '';
+    this.nuevaHora = '';
+    this.motivoReprogramacion = '';
+    this.showReprogramar = true;
+  }
+
+  cerrarReprogramar(): void {
+    this.showReprogramar = false;
+    this.citaReprogramar = null;
+  }
+
+  Reprogramar(): void {
+    if (!this.nuevaFecha || !this.nuevaHora) {
+      this.showNotify('Seleccione nueva fecha y hora', 'error');
+      return;
+    }
+    
+    this.loadingReprogramar = true;
+    this.api.createReprogramacion({
+      cita_id: this.citaReprogramar.id,
+      nueva_fecha: this.nuevaFecha,
+      nueva_hora: this.nuevaHora,
+      motivo: this.motivoReprogramacion
+    }).subscribe({
+      next: () => {
+        this.showNotify('Solicitud de reprogramación enviada', 'success');
+        this.loadingReprogramar = false;
+        this.cerrarReprogramar();
+        this.loadCitas();
+        this.refreshService.triggerRefresh('citas');
+      },
+      error: (err: any) => {
+        this.showNotify(err.error?.error || 'Error al reprogramar', 'error');
+        this.loadingReprogramar = false;
+      }
+    });
   }
 
   logout(): void {

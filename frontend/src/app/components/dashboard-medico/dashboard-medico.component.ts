@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
+import { DataRefreshService } from '../../services/data-refresh.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard-medico',
@@ -12,11 +14,13 @@ import { ApiService } from '../../services/api.service';
   templateUrl: './dashboard-medico.component.html',
   styleUrls: ['./dashboard-medico.component.css']
 })
-export class DashboardMedicoComponent implements OnInit {
+export class DashboardMedicoComponent implements OnInit, OnDestroy {
   user: any;
   medicoId = 0;
   activeTab = 'agenda';
   filterFecha = '';
+  filterEstado = '';
+  filterView = 'all';
   citas: any[] = [];
   disponibilidad: any[] = [];
   pacientes: any[] = [];
@@ -30,8 +34,27 @@ export class DashboardMedicoComponent implements OnInit {
   nuevaDisp: any = { dia_semana: '1', hora_inicio: '08:00', hora_fin: '17:00' };
   nuevoHistorial: any = { paciente_id: '', diagnostico: '', tratamiento: '', observaciones: '', cita_id: null };
   citasPaciente: any[] = [];
+  citaSeleccionada: any = null;
+  
+  // Reprogramaciones
+  reprogramaciones: any[] = [];
+  
+  get reprogramacionesPendientes(): number {
+    return this.reprogramaciones.filter(r => r.estado === 'pendiente').length;
+  }
+  
+  private refreshSub: Subscription | null = null;
 
-  constructor(private authService: AuthService, private api: ApiService, private router: Router) {}
+  constructor(
+    private authService: AuthService, 
+    private api: ApiService, 
+    private router: Router,
+    private refreshService: DataRefreshService
+  ) {}
+
+  ngOnDestroy(): void {
+    this.refreshSub?.unsubscribe();
+  }
 
   showNotify(message: string, type: string, duration = 3000): void {
     this.notificationMessage = message;
@@ -54,16 +77,53 @@ export class DashboardMedicoComponent implements OnInit {
     this.loadCitas();
     this.loadDisponibilidad();
     this.loadPacientes();
+    
+    this.refreshSub = this.refreshService.refresh$.subscribe((type: string) => {
+      if (type === 'citas' || type === 'all') this.loadCitas();
+      if (type === 'disponibilidad' || type === 'all') this.loadDisponibilidad();
+      if (type === 'pacientes' || type === 'all') this.loadPacientes();
+      if (type === 'reprogramaciones' || type === 'all') this.loadReprogramaciones();
+    });
+    
+    this.loadReprogramaciones();
+  }
+
+  getLocalDateString(): string {
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: 'America/Bogota',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    };
+    const d = new Date();
+    const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' });
+    return formatter.format(d);
   }
 
   loadCitas(): void {
     const filters: any = { medico_id: this.medicoId };
-    if (this.filterFecha) filters.fecha = this.filterFecha;
+    
+    if (this.filterView === 'today') {
+      const today = this.getLocalDateString();
+      filters.fecha = today;
+      this.filterFecha = today;
+    } else if (this.filterFecha) {
+      filters.fecha = this.filterFecha;
+    }
+    
+    if (this.filterEstado) filters.estado = this.filterEstado;
     
     this.api.getCitas(filters).subscribe({
       next: (data: any) => this.citas = data,
       error: (err: any) => console.error(err)
     });
+  }
+
+  onFilterViewChange(): void {
+    if (this.filterView === 'all') {
+      this.filterFecha = '';
+    }
+    this.loadCitas();
   }
 
   loadDisponibilidad(): void {
@@ -80,11 +140,43 @@ export class DashboardMedicoComponent implements OnInit {
     });
   }
 
+  loadReprogramaciones(): void {
+    this.api.getReprogramaciones().subscribe({
+      next: (data: any) => this.reprogramaciones = data,
+      error: (err: any) => console.error(err)
+    });
+  }
+
+  aprobarReprogramacion(id: number): void {
+    this.api.updateReprogramacion(id, { estado: 'aprobada' }).subscribe({
+      next: () => {
+        this.showNotify('Reprogramación aprobada', 'success');
+        this.loadReprogramaciones();
+        this.loadCitas();
+        this.refreshService.triggerRefresh('citas');
+        this.refreshService.triggerRefresh('reprogramaciones');
+      },
+      error: (err: any) => this.showNotify(err.error?.error || 'Error al aprobar', 'error')
+    });
+  }
+
+  rechazarReprogramacion(id: number): void {
+    this.api.updateReprogramacion(id, { estado: 'rechazada' }).subscribe({
+      next: () => {
+        this.showNotify('Reprogramación rechazada', 'success');
+        this.loadReprogramaciones();
+        this.refreshService.triggerRefresh('reprogramaciones');
+      },
+      error: (err: any) => this.showNotify(err.error?.error || 'Error al rechazar', 'error')
+    });
+  }
+
   confirmarCita(id: number): void {
     this.api.updateCita(id, { estado: 'confirmada' }).subscribe({
       next: () => {
         this.showNotify('Cita confirmada', 'success');
         this.loadCitas();
+        this.refreshService.triggerRefresh('citas');
       },
       error: (err: any) => this.showNotify(err.error?.error || 'Error al confirmar', 'error')
     });
@@ -95,6 +187,7 @@ export class DashboardMedicoComponent implements OnInit {
       next: () => {
         this.showNotify('Cita cancelada', 'success');
         this.loadCitas();
+        this.refreshService.triggerRefresh('citas');
       },
       error: (err: any) => this.showNotify(err.error?.error || 'Error al cancelar', 'error')
     });
@@ -105,6 +198,7 @@ export class DashboardMedicoComponent implements OnInit {
       next: () => {
         this.showNotify('Cita completada', 'success');
         this.loadCitas();
+        this.refreshService.triggerRefresh('citas');
       },
       error: (err: any) => this.showNotify(err.error?.error || 'Error al completar', 'error')
     });
@@ -119,6 +213,7 @@ export class DashboardMedicoComponent implements OnInit {
       next: () => {
         this.showNotify('Horario agregado correctamente', 'success');
         this.loadDisponibilidad();
+        this.refreshService.triggerRefresh('disponibilidad');
         this.nuevaDisp = { dia_semana: '1', hora_inicio: '08:00', hora_fin: '17:00' };
       },
       error: (err: any) => this.showNotify(err.error?.error || 'Error al agregar horario', 'error')
@@ -130,6 +225,7 @@ export class DashboardMedicoComponent implements OnInit {
       next: () => {
         this.showNotify(d.activo ? 'Horario desactivado' : 'Horario activado', 'success');
         this.loadDisponibilidad();
+        this.refreshService.triggerRefresh('disponibilidad');
       },
       error: (err: any) => this.showNotify(err.error?.error || 'Error al actualizar', 'error')
     });
@@ -144,12 +240,25 @@ export class DashboardMedicoComponent implements OnInit {
     this.nuevoHistorial.cita_id = null;
     this.citasPaciente = this.citas.filter(c => 
       c.paciente_id === Number(this.nuevoHistorial.paciente_id) && 
-      (c.estado === 'pendiente' || c.estado === 'confirmada')
+      c.estado === 'confirmada'
     );
   }
 
   getCitasPaciente(): any[] {
     return this.citasPaciente;
+  }
+
+  abrirModalHistorial(cita: any): void {
+    this.citaSeleccionada = cita;
+    this.nuevoHistorial = {
+      paciente_id: cita.paciente_id,
+      diagnostico: '',
+      tratamiento: '',
+      observaciones: '',
+      cita_id: cita.id
+    };
+    this.citasPaciente = [cita];
+    this.activeTab = 'historial';
   }
 
   registrarHistorial(): void {
@@ -173,6 +282,7 @@ export class DashboardMedicoComponent implements OnInit {
         this.nuevoHistorial = { paciente_id: '', diagnostico: '', tratamiento: '', observaciones: '', cita_id: null };
         this.loading = false;
         this.loadCitas();
+        this.refreshService.triggerRefresh('citas');
       },
       error: (err: any) => {
         this.showNotify(err.error?.error || 'Error al registrar historial', 'error');

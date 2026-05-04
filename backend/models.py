@@ -1,8 +1,11 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
+
+def get_colombia_datetime():
+    return datetime.now(timezone(timedelta(hours=-5)))
 
 class Rol(db.Model):
     __tablename__ = 'roles'
@@ -105,7 +108,7 @@ class Medico(db.Model):
     usuario = db.relationship('Usuario', backref='medico')
     disponibilidad = db.relationship('Disponibilidad', backref='medico', lazy='dynamic', cascade='all, delete-orphan')
     citas = db.relationship('Cita', backref='medico', lazy='dynamic')
-    historial = db.relationship('HistorialMedico', backref='medico', lazy='dynamic')
+    historial = db.relationship('HistorialMedico', backref='medico_rel', lazy='dynamic')
     
     def to_dict(self):
         return {
@@ -148,8 +151,8 @@ class Cita(db.Model):
     tipo_consulta = db.Column(db.String(50), default='Medicina General')
     estado = db.Column(db.String(20), default='pendiente')
     observaciones = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_colombia_datetime)
+    updated_at = db.Column(db.DateTime, default=get_colombia_datetime, onupdate=get_colombia_datetime)
     
     def to_dict(self):
         return {
@@ -165,6 +168,42 @@ class Cita(db.Model):
             'medico': self.medico.to_dict() if self.medico else None
         }
 
+class Reprogramacion(db.Model):
+    __tablename__ = 'reprogramaciones'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    cita_id = db.Column(db.Integer, db.ForeignKey('citas.id'), nullable=False)
+    paciente_id = db.Column(db.Integer, db.ForeignKey('pacientes.id'), nullable=False)
+    medico_id = db.Column(db.Integer, db.ForeignKey('medicos.id'), nullable=False)
+    fecha_original = db.Column(db.Date, nullable=False)
+    hora_original = db.Column(db.Time, nullable=False)
+    nueva_fecha = db.Column(db.Date, nullable=False)
+    nueva_hora = db.Column(db.Time, nullable=False)
+    motivo = db.Column(db.Text)
+    estado = db.Column(db.String(20), default='pendiente')
+    created_at = db.Column(db.DateTime, default=get_colombia_datetime)
+    
+    cita = db.relationship('Cita', backref='reprogramaciones')
+    paciente = db.relationship('Paciente', backref='reprogramaciones')
+    medico = db.relationship('Medico', backref='reprogramaciones')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'cita_id': self.cita_id,
+            'paciente_id': self.paciente_id,
+            'medico_id': self.medico_id,
+            'fecha_original': str(self.fecha_original),
+            'hora_original': str(self.hora_original),
+            'nueva_fecha': str(self.nueva_fecha),
+            'nueva_hora': str(self.nueva_hora),
+            'motivo': self.motivo,
+            'estado': self.estado,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'paciente': self.paciente.to_dict() if self.paciente else None,
+            'medico': self.medico.to_dict() if self.medico else None
+        }
+
 class HistorialMedico(db.Model):
     __tablename__ = 'historial_medico'
     
@@ -172,13 +211,13 @@ class HistorialMedico(db.Model):
     paciente_id = db.Column(db.Integer, db.ForeignKey('pacientes.id'), nullable=False)
     medico_id = db.Column(db.Integer, db.ForeignKey('medicos.id'), nullable=False)
     cita_id = db.Column(db.Integer, db.ForeignKey('citas.id'))
-    fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_registro = db.Column(db.DateTime, default=get_colombia_datetime)
     diagnostico = db.Column(db.Text)
     tratamiento = db.Column(db.Text)
     observaciones = db.Column(db.Text)
     
-    medico = db.relationship('Medico', backref='historial')
-    cita = db.relationship('Cita', backref='historial')
+    medico = db.relationship('Medico', backref='historiales')
+    cita = db.relationship('Cita', backref='historial_medico')
     
     def to_dict(self):
         data = {

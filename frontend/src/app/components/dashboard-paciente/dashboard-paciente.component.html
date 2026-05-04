@@ -1,8 +1,15 @@
 <div class="dashboard-layout">
   <aside class="sidebar">
     <div class="sidebar-header">
-      <h2 class="sidebar-title">Bienestar</h2>
-      <p class="sidebar-subtitle">Centro Médico</p>
+      <div class="sidebar-logo">
+        <div class="logo-icon">
+          <i class="fas fa-hospital"></i>
+        </div>
+        <div class="logo-text">
+          <h2>Bienestar</h2>
+          <p>Paciente</p>
+        </div>
+      </div>
     </div>
     
     <nav class="sidebar-nav">
@@ -70,7 +77,8 @@
             <p class="type"><i class="fas fa-sticky-note"></i> {{ cita.tipo_consulta }}</p>
           </div>
           <div class="cita-actions" *ngIf="cita.estado === 'pendiente' || cita.estado === 'confirmada'">
-            <button class="btn-cancel" (click)="cancelarCita(cita)">Cancelar Cita</button>
+            <button class="btn-reprogram" (click)="abrirReprogramar(cita)"><i class="fas fa-calendar-plus"></i> Reprogramar</button>
+            <button class="btn-cancel" (click)="cancelarCita(cita)"><i class="fas fa-times"></i> Cancelar</button>
           </div>
         </div>
       </div>
@@ -167,20 +175,65 @@
     </div>
   </main>
 
-  <!-- Modal de Confirmación -->
+  <!-- Modal de Reprogramación -->
+  <div *ngIf="showReprogramar" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3><i class="fas fa-calendar-plus"></i> Reprogramar Cita</h3>
+        <button class="close-btn" (click)="cerrarReprogramar()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="current-date">
+          <i class="fas fa-calendar-alt"></i> <strong>Fecha actual:</strong> {{ citaReprogramar?.fecha }} - {{ citaReprogramar?.hora }}
+        </p>
+        <p class="doctor-info">
+          <i class="fas fa-user-md"></i> <strong>Médico:</strong> Dr. {{ citaReprogramar?.medico?.usuario?.nombre }} {{ citaReprogramar?.medico?.usuario?.apellido }}
+        </p>
+        
+        <div class="form-group">
+          <label><i class="fas fa-calendar"></i> Nueva Fecha:</label>
+          <input type="date" [(ngModel)]="nuevaFecha" [min]="minDate" class="form-control">
+        </div>
+        
+        <div class="form-group">
+          <label><i class="fas fa-clock"></i> Nueva Hora:</label>
+          <input type="time" [(ngModel)]="nuevaHora" class="form-control">
+        </div>
+        
+        <div class="form-group">
+          <label><i class="fas fa-comment-alt"></i> Motivo (opcional):</label>
+          <textarea [(ngModel)]="motivoReprogramacion" class="form-control" rows="3" placeholder="Motivo de la reprogramación"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button (click)="cerrarReprogramar()" class="btn-cancel-modal">Cancelar</button>
+        <button (click)="Reprogramar()" class="btn-confirm-modal" [disabled]="loadingReprogramar">
+          <i class="fas fa-paper-plane"></i> {{ loadingReprogramar ? 'Enviando...' : 'Solicitar Reprogramación' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmación Cancelar -->
   <div *ngIf="showConfirmCancel" class="modal-overlay">
     <div class="modal confirm-modal">
-      <div class="modal-icon warning">
-        <i class="fas fa-exclamation-triangle"></i>
+      <div class="modal-header danger">
+        <h3><i class="fas fa-exclamation-triangle"></i> Cancelar Cita</h3>
+        <button class="close-btn" (click)="cerrarModal()">&times;</button>
       </div>
-      <h3>Cancelar Cita</h3>
-      <p>¿Estás seguro de cancelar la cita con <strong>Dr. {{ citaAEliminar?.medico?.usuario?.nombre }} {{ citaAEliminar?.medico?.usuario?.apellido }}</strong>?</p>
-      <p class="cita-info-modal">
-        <i class="fas fa-calendar-alt"></i> {{ citaAEliminar?.fecha }} - {{ citaAEliminar?.hora }}
-      </p>
+      <div class="modal-body">
+        <p class="confirm-message">
+          ¿Estás seguro de cancelar la cita con <strong>Dr. {{ citaAEliminar?.medico?.usuario?.nombre }} {{ citaAEliminar?.medico?.usuario?.apellido }}</strong>?
+        </p>
+        <p class="cita-info-modal">
+          <i class="fas fa-calendar-alt"></i> {{ citaAEliminar?.fecha }} - {{ citaAEliminar?.hora }}
+        </p>
+      </div>
       <div class="modal-actions">
         <button (click)="cerrarModal()" class="btn-cancel-modal">No, mantener cita</button>
-        <button (click)="confirmarCancelar()" class="btn-confirm-modal">Sí, cancelar cita</button>
+        <button (click)="confirmarCancelar()" class="btn-confirm-modal danger">
+          <i class="fas fa-times"></i> Sí, cancelar cita
+        </button>
       </div>
     </div>
   </div>

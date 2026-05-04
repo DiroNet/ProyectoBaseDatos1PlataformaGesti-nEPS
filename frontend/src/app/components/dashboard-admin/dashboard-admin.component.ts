@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
+import { DataRefreshService } from '../../services/data-refresh.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard-admin',
@@ -12,7 +14,7 @@ import { ApiService } from '../../services/api.service';
   templateUrl: './dashboard-admin.component.html',
   styleUrls: ['./dashboard-admin.component.css']
 })
-export class DashboardAdminComponent implements OnInit {
+export class DashboardAdminComponent implements OnInit, OnDestroy {
   activeTab = 'usuarios';
   filterFecha = '';
   filterMedico = '';
@@ -28,6 +30,7 @@ export class DashboardAdminComponent implements OnInit {
   
   // Notificaciones
   showNotification = false;
+  private refreshSub: Subscription | null = null;
   notificationType = '';
   notificationMessage = '';
   
@@ -44,7 +47,34 @@ export class DashboardAdminComponent implements OnInit {
   showAgregarEspecialidad = false;
   nuevaEspecialidad: any = { nombre: '', descripcion: '' };
 
-  constructor(private authService: AuthService, private api: ApiService, private router: Router) {}
+  constructor(
+    private authService: AuthService, 
+    private api: ApiService, 
+    private router: Router,
+    private refreshService: DataRefreshService
+  ) {}
+
+  ngOnInit(): void {
+    const user = this.authService.getUser();
+    if (!user || this.authService.getUserRole() !== 'administrador') {
+      this.router.navigate(['/login']);
+      return;
+    }
+    this.loadUsuarios();
+    this.loadMedicos();
+    this.loadCitas();
+    this.loadEspecialidades();
+    
+    this.refreshSub = this.refreshService.refresh$.subscribe((type: string) => {
+      if (type === 'usuarios' || type === 'all') this.loadUsuarios();
+      if (type === 'citas' || type === 'all') this.loadCitas();
+      if (type === 'medicos' || type === 'all') this.loadMedicos();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.refreshSub?.unsubscribe();
+  }
 
   showNotify(message: string, type: string, duration = 3000): void {
     this.notificationMessage = message;
@@ -67,18 +97,6 @@ export class DashboardAdminComponent implements OnInit {
       
       return matchesSearch && matchesRol && matchesEstado;
     });
-  }
-
-  ngOnInit(): void {
-    const user = this.authService.getUser();
-    if (!user || this.authService.getUserRole() !== 'administrador') {
-      this.router.navigate(['/login']);
-      return;
-    }
-    this.loadUsuarios();
-    this.loadMedicos();
-    this.loadCitas();
-    this.loadEspecialidades();
   }
 
   loadUsuarios(): void {
@@ -112,6 +130,7 @@ export class DashboardAdminComponent implements OnInit {
       next: () => {
         cita.estado = nuevoEstado;
         this.showNotify(`Cita actualizada a ${nuevoEstado}`, 'success');
+        this.refreshService.triggerRefresh('citas');
       },
       error: (err: any) => this.showNotify(err.error?.error || 'Error al actualizar cita', 'error')
     });
@@ -146,6 +165,7 @@ export class DashboardAdminComponent implements OnInit {
         usuario.activo = newEstado;
         usuario.estado = newEstado ? 'activo' : 'inactivo';
         this.showNotify(`Usuario ${newEstado ? 'activado' : 'desactivado'} correctamente`, 'success');
+        this.refreshService.triggerRefresh('usuarios');
       },
       error: (err: any) => this.showNotify(err.error?.error || 'Error al actualizar usuario', 'error')
     });
@@ -165,6 +185,7 @@ export class DashboardAdminComponent implements OnInit {
         next: () => {
           this.showNotify('Usuario eliminado correctamente', 'success');
           this.loadUsuarios();
+          this.refreshService.triggerRefresh('usuarios');
         },
         error: (err: any) => this.showNotify(err.error?.error || 'Error al eliminar usuario', 'error')
       });
@@ -173,6 +194,7 @@ export class DashboardAdminComponent implements OnInit {
         next: () => {
           this.showNotify('Médico eliminado correctamente', 'success');
           this.loadMedicos();
+          this.refreshService.triggerRefresh('medicos');
         },
         error: (err: any) => this.showNotify(err.error?.error || 'Error al eliminar médico', 'error')
       });
@@ -207,6 +229,8 @@ export class DashboardAdminComponent implements OnInit {
         this.showNotify('Médico agregado correctamente', 'success');
         this.loadMedicos();
         this.loadUsuarios();
+        this.refreshService.triggerRefresh('medicos');
+        this.refreshService.triggerRefresh('usuarios');
         this.showAgregarMedico = false;
         this.nuevoMedico = { nombre: '', apellido: '', email: '', telefono: '', password: '', especialidad_id: '', cedula_profesional: '' };
       },
@@ -219,6 +243,7 @@ export class DashboardAdminComponent implements OnInit {
       next: () => {
         medico.activo = !medico.activo;
         this.showNotify(`Médico ${medico.activo ? 'activado' : 'desactivado'} correctamente`, 'success');
+        this.refreshService.triggerRefresh('medicos');
       },
       error: (err: any) => this.showNotify(err.error?.error || 'Error al actualizar médico', 'error')
     });

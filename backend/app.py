@@ -5,7 +5,7 @@ from flask_bcrypt import Bcrypt
 from datetime import datetime, time, date
 import re
 from config import config
-from models import db, Rol, Usuario, Paciente, Medico, Disponibilidad, Cita, HistorialMedico, Especialidad, Estado
+from models import db, Rol, Usuario, Paciente, Medico, Disponibilidad, Cita, Reprogramacion, HistorialMedico, Especialidad, Estado
 
 app = Flask(__name__)
 app.config.from_object(config['development'])
@@ -187,37 +187,40 @@ def update_usuario(user_id):
 @jwt_required()
 def delete_usuario(user_id):
     current_id = int(get_jwt_identity())
-    current_user = Usuario.query.get(current_id)
+    current_user = db.session.get(Usuario, current_id)
     
-    # Solo administradores pueden eliminar usuarios
-    if current_user.rol.nombre != 'administrador':
+    if not current_user:
+        return jsonify({'error': 'Usuario no encontrado'}), 404
+    
+    # Forzar carga del rol
+    rol = db.session.get(Rol, current_user.rol_id)
+    if not rol or rol.nombre != 'administrador':
         return jsonify({'error': 'No autorizado'}), 403
     
-    usuario = Usuario.query.get_or_404(user_id)
+    usuario = db.session.get(Usuario, user_id)
+    if not usuario:
+        return jsonify({'error': 'Usuario no encontrado'}), 404
     
     # No permitir eliminarse a sí mismo
     if usuario.id == current_id:
         return jsonify({'error': 'No puedes eliminar tu propia cuenta'}), 400
     
-    from models import Cita, Disponibilidad, HistorialMedico
+    from models import Cita, Disponibilidad, HistorialMedico, Reprogramacion
     
     # Buscar y eliminar paciente asociado
     paciente = Paciente.query.filter_by(usuario_id=user_id).first()
     if paciente:
-        # Eliminar citas del paciente
+        Reprogramacion.query.filter_by(paciente_id=paciente.id).delete()
         Cita.query.filter_by(paciente_id=paciente.id).delete()
-        # Eliminar historial del paciente
         HistorialMedico.query.filter_by(paciente_id=paciente.id).delete()
         db.session.delete(paciente)
     
     # Buscar y eliminar médico asociado
     medico = Medico.query.filter_by(usuario_id=user_id).first()
     if medico:
-        # Eliminar disponibilidad del médico
+        Reprogramacion.query.filter_by(medico_id=medico.id).delete()
         Disponibilidad.query.filter_by(medico_id=medico.id).delete()
-        # Eliminar citas del médico
         Cita.query.filter_by(medico_id=medico.id).delete()
-        # Eliminar historial del médico
         HistorialMedico.query.filter_by(medico_id=medico.id).delete()
         db.session.delete(medico)
     
@@ -358,16 +361,20 @@ def create_medico():
 @jwt_required()
 def delete_medico(medico_id):
     current_id = int(get_jwt_identity())
-    current_user = Usuario.query.get(current_id)
+    current_user = db.session.get(Usuario, current_id)
     
     if current_user.rol.nombre != 'administrador':
         return jsonify({'error': 'No autorizado'}), 403
     
-    medico = Medico.query.get_or_404(medico_id)
+    medico = db.session.get(Medico, medico_id)
+    if not medico:
+        return jsonify({'error': 'Médico no encontrado'}), 404
     usuario_id = medico.usuario_id
     
-    from models import Cita, Disponibilidad, HistorialMedico
+    from models import Cita, Disponibilidad, HistorialMedico, Reprogramacion
     
+    # Eliminar reprogramaciones
+    Reprogramacion.query.filter_by(medico_id=medico_id).delete()
     # Eliminar disponibilidad
     Disponibilidad.query.filter_by(medico_id=medico_id).delete()
     # Eliminar citas
@@ -378,7 +385,7 @@ def delete_medico(medico_id):
     db.session.delete(medico)
     
     # Eliminar también el usuario del médico
-    usuario = Usuario.query.get(usuario_id)
+    usuario = db.session.get(Usuario, usuario_id)
     if usuario:
         db.session.delete(usuario)
     
@@ -584,8 +591,11 @@ def update_cita(cita_id):
 @jwt_required()
 def delete_cita(cita_id):
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
-    cita = Cita.query.get_or_404(cita_id)
+    usuario = db.session.get(Usuario, current_id)
+    cita = db.session.get(Cita, cita_id)
+    
+    if not cita:
+        return jsonify({'error': 'Cita no encontrada'}), 404
     
     paciente = Paciente.query.filter_by(usuario_id=current_id).first()
     
@@ -595,10 +605,143 @@ def delete_cita(cita_id):
     elif usuario.rol.nombre != 'administrador':
         return jsonify({'error': 'No autorizado'}), 403
     
+    from models import Reprogramacion
+    # Eliminar reprogramaciones asociadas a la cita
+    Reprogramacion.query.filter_by(cita_id=cita_id).delete()
+    
     cita.estado = 'cancelada'
     db.session.commit()
     
     return jsonify({'message': 'Cita cancelada'}), 200
+
+# ============ REPROGRAMACIÓN ============
+
+@app.route('/api/reprogramaciones', methods=['GET'])
+@jwt_required()
+def get_reprogramaciones():
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+    
+    if usuario.rol.nombre == 'paciente':
+        paciente = Paciente.query.filter_by(usuario_id=current_id).first()
+        if not paciente:
+            return jsonify({'error': 'Paciente no encontrado'}), 404
+        reprogramaciones = Reprogramacion.query.filter_by(paciente_id=paciente.id).order_by(Reprogramacion.created_at.desc()).all()
+    elif usuario.rol.nombre == 'medico':
+        medico = Medico.query.filter_by(usuario_id=current_id).first()
+        if not medico:
+            return jsonify({'error': 'Médico no encontrado'}), 404
+        reprogramaciones = Reprogramacion.query.filter_by(medico_id=medico.id).order_by(Reprogramacion.created_at.desc()).all()
+    elif usuario.rol.nombre == 'administrador':
+        reprogramaciones = Reprogramacion.query.order_by(Reprogramacion.created_at.desc()).all()
+    else:
+        return jsonify({'error': 'No autorizado'}), 403
+    
+    return jsonify([r.to_dict() for r in reprogramaciones]), 200
+
+@app.route('/api/reprogramaciones', methods=['POST'])
+@jwt_required()
+def create_reprogramacion():
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+    paciente = Paciente.query.filter_by(usuario_id=current_id).first()
+    
+    if not paciente:
+        return jsonify({'error': 'Paciente no encontrado'}), 404
+    
+    data = request.get_json()
+    
+    required = ['cita_id', 'nueva_fecha', 'nueva_hora']
+    for field in required:
+        if field not in data:
+            return jsonify({'error': f'Campo {field} requerido'}), 400
+    
+    cita = Cita.query.get(data['cita_id'])
+    if not cita:
+        return jsonify({'error': 'Cita no encontrada'}), 404
+    
+    if cita.paciente_id != paciente.id:
+        return jsonify({'error': 'No autorizado'}), 403
+    
+    if cita.estado not in ['pendiente', 'confirmada']:
+        return jsonify({'error': 'No se puede reprogramar esta cita'}), 400
+    
+    nueva_fecha = datetime.strptime(data['nueva_fecha'], '%Y-%m-%d').date()
+    nueva_hora = datetime.strptime(data['nueva_hora'], '%H:%M').time()
+    
+    disponibilidad = Disponibilidad.query.filter_by(
+        medico_id=cita.medico_id, 
+        dia_semana=nueva_fecha.isoweekday(), 
+        activo=True
+    ).first()
+    if not disponibilidad:
+        return jsonify({'error': 'El médico no tiene disponibilidad en ese día'}), 400
+    
+    hora_inicio = disponibilidad.hora_inicio
+    hora_fin = disponibilidad.hora_fin
+    if not (hora_inicio <= nueva_hora <= hora_fin):
+        return jsonify({'error': 'La hora no está dentro del horario de disponibilidad'}), 400
+    
+    existing = Cita.query.filter(
+        Cita.medico_id == cita.medico_id,
+        Cita.fecha == nueva_fecha,
+        Cita.hora == nueva_hora,
+        Cita.estado.in_(['pendiente', 'confirmada'])
+    ).first()
+    if existing:
+        return jsonify({'error': 'Ya existe una cita en ese horario'}), 400
+    
+    reprogramacion = Reprogramacion(
+        cita_id=cita.id,
+        paciente_id=paciente.id,
+        medico_id=cita.medico_id,
+        fecha_original=cita.fecha,
+        hora_original=cita.hora,
+        nueva_fecha=nueva_fecha,
+        nueva_hora=nueva_hora,
+        motivo=data.get('motivo', ''),
+        estado='pendiente'
+    )
+    db.session.add(reprogramacion)
+    db.session.commit()
+    
+    return jsonify(reprogramacion.to_dict()), 201
+
+@app.route('/api/reprogramaciones/<int:reprogramacion_id>', methods=['PUT'])
+@jwt_required()
+def update_reprogramacion(reprogramacion_id):
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+    
+    if usuario.rol.nombre != 'medico':
+        return jsonify({'error': 'Solo médicos pueden aprobar/rechazar reprogramaciones'}), 403
+    
+    medico = Medico.query.filter_by(usuario_id=current_id).first()
+    if not medico:
+        return jsonify({'error': 'Médico no encontrado'}), 404
+    
+    reprogramacion = Reprogramacion.query.get_or_404(reprogramacion_id)
+    
+    if reprogramacion.medico_id != medico.id:
+        return jsonify({'error': 'No autorizado'}), 403
+    
+    data = request.get_json()
+    nuevo_estado = data.get('estado')
+    
+    if nuevo_estado not in ['aprobada', 'rechazada']:
+        return jsonify({'error': 'Estado inválido'}), 400
+    
+    reprogramacion.estado = nuevo_estado
+    
+    if nuevo_estado == 'aprobada':
+        cita = Cita.query.get(reprogramacion.cita_id)
+        if cita:
+            cita.fecha = reprogramacion.nueva_fecha
+            cita.hora = reprogramacion.nueva_hora
+    
+    db.session.commit()
+    
+    return jsonify(reprogramacion.to_dict()), 200
 
 # ============ HISTORIAL MÉDICO ============
 
@@ -614,7 +757,9 @@ def create_historial():
     current_id = int(get_jwt_identity())
     usuario = Usuario.query.get(current_id)
     
-    if usuario.rol.nombre != 'medico':
+    # Obtener el rol directamente
+    rol = Rol.query.get(usuario.rol_id)
+    if not rol or rol.nombre != 'medico':
         return jsonify({'error': 'Solo médicos pueden registrar historial'}), 403
     
     data = request.get_json()

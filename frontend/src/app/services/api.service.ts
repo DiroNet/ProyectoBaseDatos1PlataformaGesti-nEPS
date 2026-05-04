@@ -42,6 +42,19 @@ export class ApiService {
     return this.http.delete(`${this.apiUrl}/citas/${id}`, { headers: this.getHeaders() });
   }
 
+  // Reprogramaciones
+  getReprogramaciones(): any {
+    return this.http.get(`${this.apiUrl}/reprogramaciones`, { headers: this.getHeaders() });
+  }
+
+  createReprogramacion(data: any): any {
+    return this.http.post(`${this.apiUrl}/reprogramaciones`, data, { headers: this.getHeaders() });
+  }
+
+  updateReprogramacion(id: number, data: any): any {
+    return this.http.put(`${this.apiUrl}/reprogramaciones/${id}`, data, { headers: this.getHeaders() });
+  }
+
   // Médicos
   getMedicos(): any {
     return this.http.get(`${this.apiUrl}/medicos`, { headers: this.getHeaders() });
