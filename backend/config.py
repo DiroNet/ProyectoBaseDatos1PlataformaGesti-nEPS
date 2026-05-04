@@ -3,14 +3,9 @@ import os
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-hospital-2026'
     
-    # PostgreSQL Configuration
-    DB_NAME = 'ClaseLunesPruebasSoftware'
-    DB_USER = 'postgres'
-    DB_PASSWORD = '12345'
-    DB_HOST = 'localhost'
-    DB_PORT = '5432'
-    
-    SQLALCHEMY_DATABASE_URI = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+    # SQLite Configuration (archivo local, no necesita servidor)
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    SQLALCHEMY_DATABASE_URI = f'sqlite:///{os.path.join(basedir, "hospital.db")}'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # JWT Configuration

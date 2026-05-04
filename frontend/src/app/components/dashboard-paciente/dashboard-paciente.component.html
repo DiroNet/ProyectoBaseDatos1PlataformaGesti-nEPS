@@ -70,7 +70,7 @@
             <p class="type"><i class="fas fa-sticky-note"></i> {{ cita.tipo_consulta }}</p>
           </div>
           <div class="cita-actions" *ngIf="cita.estado === 'pendiente' || cita.estado === 'confirmada'">
-            <button class="btn-cancel" (click)="cancelarCita(cita.id)">Cancelar Cita</button>
+            <button class="btn-cancel" (click)="cancelarCita(cita)">Cancelar Cita</button>
           </div>
         </div>
       </div>
@@ -84,13 +84,28 @@
       
       <form (ngSubmit)="agendarCita()" class="appointment-form">
         <div class="form-group">
-          <label>Seleccionar Médico:</label>
-          <select [(ngModel)]="nuevaCita.medico_id" name="medico_id" required>
-            <option value="">-- Seleccionar médico --</option>
-            <option *ngFor="let m of medicos" [value]="m.id">
-              Dr. {{ m.usuario?.nombre }} {{ m.usuario?.apellido }} - {{ m.especialidad }}
+          <label>Tipo de Consulta:</label>
+          <select [(ngModel)]="nuevaCita.tipo_consulta" name="tipo_consulta" (change)="onEspecialidadChange()" required>
+            <option value="">-- Seleccionar tipo de consulta --</option>
+            <option *ngFor="let esp of especialidades" [value]="esp.nombre">
+              {{ esp.nombre }}
             </option>
           </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Seleccionar Médico:</label>
+          <select [(ngModel)]="nuevaCita.medico_id" name="medico_id" (change)="onMedicoChange()" required [disabled]="!nuevaCita.tipo_consulta || medicosFiltrados.length === 0">
+            <option value="">-- Seleccionar médico --</option>
+            <ng-container *ngIf="medicosFiltrados.length > 0">
+              <option *ngFor="let m of medicosFiltrados" [value]="m.id">
+                Dr. {{ m.usuario?.nombre }} {{ m.usuario?.apellido }} - {{ m.especialidad }}
+              </option>
+            </ng-container>
+          </select>
+          <p *ngIf="nuevaCita.tipo_consulta && medicosFiltrados.length === 0" class="error-text">
+            <i class="fas fa-exclamation-circle"></i> No hay médicos disponibles para esta especialidad
+          </p>
         </div>
         
         <div class="form-row">
@@ -117,18 +132,7 @@
           </div>
         </div>
         
-        <div class="form-group">
-          <label>Tipo de Consulta:</label>
-          <select [(ngModel)]="nuevaCita.tipo_consulta" name="tipo_consulta">
-            <option value="Medicina General">Medicina General</option>
-            <option value="Medicina Interna">Medicina Interna</option>
-            <option value="Pediatría">Pediatría</option>
-            <option value="Ginecología">Ginecología</option>
-            <option value="Cardiología">Cardiología</option>
-          </select>
-        </div>
-        
-        <button type="submit" [disabled]="loading" class="btn-submit">
+        <button type="submit" [disabled]="loading || !nuevaCita.medico_id" class="btn-submit">
           <span *ngIf="loading" class="spinner"></span>
           {{ loading ? 'Agendando...' : 'Confirmar Cita' }}
         </button>
@@ -156,4 +160,22 @@
       </div>
     </div>
   </main>
+
+  <!-- Modal de Confirmación -->
+  <div *ngIf="showConfirmCancel" class="modal-overlay">
+    <div class="modal confirm-modal">
+      <div class="modal-icon warning">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <h3>Cancelar Cita</h3>
+      <p>¿Estás seguro de cancelar la cita con <strong>Dr. {{ citaAEliminar?.medico?.usuario?.nombre }} {{ citaAEliminar?.medico?.usuario?.apellido }}</strong>?</p>
+      <p class="cita-info-modal">
+        <i class="fas fa-calendar-alt"></i> {{ citaAEliminar?.fecha }} - {{ citaAEliminar?.hora }}
+      </p>
+      <div class="modal-actions">
+        <button (click)="cerrarModal()" class="btn-cancel-modal">No, mantener cita</button>
+        <button (click)="confirmarCancelar()" class="btn-confirm-modal">Sí, cancelar cita</button>
+      </div>
+    </div>
+  </div>
 </div>

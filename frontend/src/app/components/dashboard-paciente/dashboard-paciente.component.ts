@@ -17,6 +17,8 @@ export class DashboardPacienteComponent implements OnInit {
   activeTab = 'citas';
   citas: any[] = [];
   medicos: any[] = [];
+  medicosFiltrados: any[] = [];
+  especialidades: any[] = [];
   historial: any[] = [];
   loading = false;
   message = '';
@@ -25,7 +27,11 @@ export class DashboardPacienteComponent implements OnInit {
   notificationType = '';
   notificationMessage = '';
   
-  nuevaCita: any = { medico_id: '', fecha: '', hora: '', tipo_consulta: 'Medicina General' };
+  // Modal de confirmación
+  showConfirmCancel = false;
+  citaAEliminar: any = null;
+  
+  nuevaCita: any = { medico_id: '', fecha: '', hora: '', tipo_consulta: '' };
   minDate = new Date().toISOString().split('T')[0];
 
   showNotify(message: string, type: string, duration = 3000): void {
@@ -45,6 +51,7 @@ export class DashboardPacienteComponent implements OnInit {
     }
     this.loadCitas();
     this.loadMedicos();
+    this.loadEspecialidades();
   }
 
   loadCitas(): void {
@@ -56,9 +63,44 @@ export class DashboardPacienteComponent implements OnInit {
 
   loadMedicos(): void {
     this.api.getMedicos().subscribe({
-      next: (data: any) => this.medicos = data,
+      next: (data: any) => {
+        this.medicos = data;
+        this.medicosFiltrados = [];
+      },
       error: (err: any) => console.error(err)
     });
+  }
+
+  loadEspecialidades(): void {
+    this.api.getEspecialidades().subscribe({
+      next: (data: any) => this.especialidades = data,
+      error: (err: any) => console.error(err)
+    });
+  }
+
+  onEspecialidadChange(): void {
+    const especialidad = this.nuevaCita.tipo_consulta;
+    this.nuevaCita.medico_id = '';
+    
+    if (!especialidad) {
+      this.medicosFiltrados = [];
+      return;
+    }
+    
+    this.medicosFiltrados = this.medicos.filter(m => 
+      m.especialidad && m.especialidad.toLowerCase() === especialidad.toLowerCase()
+    );
+    
+    if (this.medicosFiltrados.length === 0) {
+      this.showNotify(`No hay médicos disponibles para ${especialidad}`, 'error');
+    }
+  }
+
+  onMedicoChange(): void {
+    const medico = this.medicosFiltrados.find(m => m.id === Number(this.nuevaCita.medico_id));
+    if (medico && medico.especialidad) {
+      this.nuevaCita.tipo_consulta = medico.especialidad;
+    }
   }
 
   agendarCita(): void {
@@ -71,7 +113,8 @@ export class DashboardPacienteComponent implements OnInit {
         this.messageType = 'success';
         this.loading = false;
         this.showNotify(this.message, 'success');
-        this.nuevaCita = { medico_id: '', fecha: '', hora: '', tipo_consulta: 'Medicina General' };
+        this.nuevaCita = { medico_id: '', fecha: '', hora: '', tipo_consulta: '' };
+        this.medicosFiltrados = [];
         this.loadCitas();
         this.activeTab = 'citas';
       },
@@ -84,16 +127,29 @@ export class DashboardPacienteComponent implements OnInit {
     });
   }
 
-  cancelarCita(id: number): void {
-    if (confirm('¿Está seguro de cancelar esta cita?')) {
-      this.api.deleteCita(id).subscribe({
-        next: () => {
-          this.loadCitas();
-          this.showNotify('Cita cancelada', 'success');
-        },
-        error: (err: any) => this.showNotify(err.error?.error || 'Error al cancelar', 'error')
-      });
-    }
+  cancelarCita(cita: any): void {
+    this.citaAEliminar = cita;
+    this.showConfirmCancel = true;
+  }
+
+  confirmarCancelar(): void {
+    if (!this.citaAEliminar) return;
+    
+    this.api.deleteCita(this.citaAEliminar.id).subscribe({
+      next: () => {
+        this.showNotify('Cita cancelada correctamente', 'success');
+        this.loadCitas();
+      },
+      error: (err: any) => this.showNotify(err.error?.error || 'Error al cancelar', 'error')
+    });
+    
+    this.showConfirmCancel = false;
+    this.citaAEliminar = null;
+  }
+
+  cerrarModal(): void {
+    this.showConfirmCancel = false;
+    this.citaAEliminar = null;
   }
 
   logout(): void {

@@ -12,15 +12,18 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './register.component.css'
 })
 export class RegisterComponent {
-  rol = '';
+  rol = 'paciente';
   email = '';
   password = '';
   confirmPassword = '';
   nombre = '';
   apellido = '';
   telefono = '';
+  cedula = '';
   fecha_nacimiento = '';
+  direccion = '';
   especialidad = '';
+  cedula_profesional = '';
   error = '';
   success = '';
   loading = false;
@@ -48,23 +51,25 @@ export class RegisterComponent {
       this.showNotify(this.error, 'error');
       return;
     }
-    
+
+    if (!this.cedula) {
+      this.error = 'Por favor ingrese su cédula';
+      this.loading = false;
+      this.showNotify(this.error, 'error');
+      return;
+    }
+
     const data: any = {
-      rol: this.rol,
+      rol: 'paciente',
       email: this.email,
       password: this.password,
       nombre: this.nombre,
       apellido: this.apellido,
-      telefono: this.telefono
+      telefono: this.telefono,
+      cedula: this.cedula,
+      fecha_nacimiento: this.fecha_nacimiento,
+      direccion: this.direccion
     };
-    
-    if (this.rol === 'paciente' && this.fecha_nacimiento) {
-      data.fecha_nacimiento = this.fecha_nacimiento;
-    }
-    
-    if (this.rol === 'medico' && this.especialidad) {
-      data.especialidad = this.especialidad;
-    }
 
     this.authService.register(data).subscribe({
       next: () => {

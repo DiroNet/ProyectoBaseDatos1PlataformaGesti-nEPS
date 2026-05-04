@@ -74,6 +74,7 @@ class Paciente(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), unique=True, nullable=False)
+    cedula = db.Column(db.String(20), unique=True)
     fecha_nacimiento = db.Column(db.Date)
     direccion = db.Column(db.Text)
     historial_clinico = db.Column(db.Text)
@@ -86,6 +87,7 @@ class Paciente(db.Model):
         return {
             'id': self.id,
             'usuario_id': self.usuario_id,
+            'cedula': self.cedula,
             'fecha_nacimiento': str(self.fecha_nacimiento) if self.fecha_nacimiento else None,
             'direccion': self.direccion,
             'usuario': self.usuario.to_dict() if self.usuario else None

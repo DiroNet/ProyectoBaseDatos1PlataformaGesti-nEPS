@@ -41,6 +41,14 @@ def register():
         if field not in data:
             return jsonify({'error': f'Campo {field} requerido'}), 400
     
+    # Validar cédula para pacientes
+    if data['rol'] == 'paciente' and not data.get('cedula'):
+        return jsonify({'error': 'Cédula requerida para pacientes'}), 400
+    
+    # Validar cédula profesional para médicos
+    if data['rol'] == 'medico' and not data.get('cedula_profesional'):
+        return jsonify({'error': 'Cédula profesional requerida para médicos'}), 400
+    
     if not validate_email(data['email']):
         return jsonify({'error': 'Email inválido'}), 400
     
@@ -67,6 +75,7 @@ def register():
     if data['rol'] == 'paciente':
         paciente = Paciente(
             usuario_id=usuario.id,
+            cedula=data.get('cedula', ''),
             fecha_nacimiento=datetime.strptime(data.get('fecha_nacimiento', '2000-01-01'), '%Y-%m-%d').date() if data.get('fecha_nacimiento') else None,
             direccion=data.get('direccion', '')
         )
@@ -621,6 +630,13 @@ def create_historial():
 def init_db():
     try:
         db.create_all()
+        
+        # Migración: agregar columna cedula si no existe
+        try:
+            db.session.execute(db.text("ALTER TABLE pacientes ADD COLUMN cedula VARCHAR(20)"))
+            db.session.commit()
+        except:
+            db.session.rollback()
         
         rol_paciente = Rol.query.filter_by(nombre='paciente').first()
         rol_medico = Rol.query.filter_by(nombre='medico').first()
