@@ -150,8 +150,14 @@
         <div *ngFor="let h of historial" class="historial-card">
           <div class="historial-header">
             <span class="date"><i class="fas fa-calendar"></i> {{ h.fecha_registro | date:'mediumDate' }}</span>
+            <span *ngIf="h.cita" class="cita-fecha">
+              <i class="fas fa-clock"></i> {{ h.cita.fecha }} - {{ h.cita.hora }}
+            </span>
           </div>
-          <div class="historial-body">
+          <div class="historial-body" *ngIf="h.medico">
+            <p class="medico-info"><i class="fas fa-user-md"></i> Dr. {{ h.medico.nombre }} {{ h.medico.apellido }} - {{ h.medico.especialidad }}</p>
+            <p *ngIf="h.cita"><strong>Tipo de consulta:</strong> {{ h.cita.tipo_consulta }}</p>
+            <hr>
             <p><strong>Diagnóstico:</strong> {{ h.diagnostico }}</p>
             <p *ngIf="h.tratamiento"><strong>Tratamiento:</strong> {{ h.tratamiento }}</p>
             <p *ngIf="h.observaciones"><strong>Observaciones:</strong> {{ h.observaciones }}</p>

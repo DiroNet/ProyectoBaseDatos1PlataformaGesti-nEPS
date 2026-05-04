@@ -52,6 +52,16 @@ export class DashboardPacienteComponent implements OnInit {
     this.loadCitas();
     this.loadMedicos();
     this.loadEspecialidades();
+    this.loadHistorial();
+  }
+
+  loadHistorial(): void {
+    if (this.user.paciente_id) {
+      this.api.getHistorialPaciente(this.user.paciente_id).subscribe({
+        next: (data: any) => this.historial = data,
+        error: (err: any) => console.error(err)
+      });
+    }
   }
 
   loadCitas(): void {

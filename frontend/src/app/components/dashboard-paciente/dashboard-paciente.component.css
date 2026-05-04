@@ -457,6 +457,34 @@
   color: #1E293B;
 }
 
+.historial-body hr {
+  border: none;
+  border-top: 1px solid #E2E8F0;
+  margin: 16px 0;
+}
+
+.historial-body .medico-info {
+  color: #0D47A1;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.historial-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.historial-header .cita-fecha {
+  font-size: 12px;
+  color: #64748B;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* SPINNER */
 .spinner {
   display: inline-block;

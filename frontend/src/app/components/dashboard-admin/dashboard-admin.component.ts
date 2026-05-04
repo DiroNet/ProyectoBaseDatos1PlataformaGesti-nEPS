@@ -14,7 +14,7 @@ import { ApiService } from '../../services/api.service';
 })
 export class DashboardAdminComponent implements OnInit {
   activeTab = 'usuarios';
-  filterFecha = new Date().toISOString().split('T')[0];
+  filterFecha = '';
   filterMedico = '';
   filterEstado = '';
   usuarios: any[] = [];
@@ -96,7 +96,8 @@ export class DashboardAdminComponent implements OnInit {
   }
 
   loadCitas(): void {
-    const filters: any = { fecha: this.filterFecha };
+    const filters: any = {};
+    if (this.filterFecha) filters.fecha = this.filterFecha;
     if (this.filterMedico) filters.medico_id = Number(this.filterMedico);
     if (this.filterEstado) filters.estado = this.filterEstado;
     

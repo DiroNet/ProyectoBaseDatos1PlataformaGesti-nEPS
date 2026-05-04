@@ -45,9 +45,21 @@ def register():
     if data['rol'] == 'paciente' and not data.get('cedula'):
         return jsonify({'error': 'Cédula requerida para pacientes'}), 400
     
+    # Validar que la cédula no esté duplicada
+    if data['rol'] == 'paciente' and data.get('cedula'):
+        cedula_existente = Paciente.query.filter_by(cedula=data['cedula']).first()
+        if cedula_existente:
+            return jsonify({'error': 'La cédula ya está registrada en el sistema'}), 400
+    
     # Validar cédula profesional para médicos
     if data['rol'] == 'medico' and not data.get('cedula_profesional'):
         return jsonify({'error': 'Cédula profesional requerida para médicos'}), 400
+    
+    # Validar que la cédula profesional no esté duplicada
+    if data['rol'] == 'medico' and data.get('cedula_profesional'):
+        medico_existente = Medico.query.filter_by(cedula_profesional=data['cedula_profesional']).first()
+        if medico_existente:
+            return jsonify({'error': 'La cédula profesional ya está registrada en el sistema'}), 400
     
     if not validate_email(data['email']):
         return jsonify({'error': 'Email inválido'}), 400
@@ -88,7 +100,7 @@ def register():
         )
         db.session.add(medico)
         
-        for day in range(1, 6):
+        for day in range(1, 8):
             disp = Disponibilidad(
                 medico_id=None,
                 dia_semana=day,
@@ -400,8 +412,8 @@ def create_disponibilidad(medico_id):
         return jsonify({'error': 'Horario debe estar entre 6:00 y 20:00'}), 400
     
     dia = int(data['dia_semana'])
-    if dia < 1 or dia > 5:
-        return jsonify({'error': 'Día debe ser 1-5 (Lunes-Viernes)'}), 400
+    if dia < 1 or dia > 7:
+        return jsonify({'error': 'Día debe ser 1-7 (Lunes-Domingo)'}), 400
     
     disp = Disponibilidad(
         medico_id=medico_id,
@@ -484,8 +496,8 @@ def create_cita():
         return jsonify({'error': 'No se pueden agendar citas en fechas pasadas'}), 400
     
     dia_semana = fecha_cita.isoweekday()
-    if dia_semana > 5:
-        return jsonify({'error': 'Solo se pueden agendar citas de lunes a viernes'}), 400
+    if dia_semana > 7:
+        return jsonify({'error': 'Solo se pueden agendar citas de lunes a domingo'}), 400
     
     disponibilidad = Disponibilidad.query.filter_by(
         medico_id=data['medico_id'],
@@ -494,20 +506,21 @@ def create_cita():
     ).first()
     
     if not disponibilidad:
-        return jsonify({'error': 'El médico no tiene disponibilidad ese día'}), 400
+        return jsonify({'error': 'El médico no tiene disponibilidad para este día. Por favor seleccione otro día.'}), 400
     
     if hora_cita < disponibilidad.hora_inicio or hora_cita > disponibilidad.hora_fin:
-        return jsonify({'error': 'Horario fuera de la disponibilidad del médico'}), 400
+        return jsonify({'error': 'El médico no atiende en este horario. Horario disponible: ' + str(disponibilidad.hora_inicio) + ' a ' + str(disponibilidad.hora_fin)}), 400
     
-    cita_existente = Cita.query.filter_by(
-        medico_id=data['medico_id'],
-        fecha=fecha_cita,
-        hora=hora_cita,
-        estado='confirmada'
+    # Verificar citas existentes (pendiente o confirmada)
+    cita_existente = Cita.query.filter(
+        Cita.medico_id == data['medico_id'],
+        Cita.fecha == fecha_cita,
+        Cita.hora == hora_cita,
+        Cita.estado.in_(['pendiente', 'confirmada'])
     ).first()
     
     if cita_existente:
-        return jsonify({'error': 'Ya existe una cita confirmada en ese horario'}), 400
+        return jsonify({'error': 'Ya existe una cita agendada en este horario. Por favor seleccione otra hora.'}), 400
     
     cita = Cita(
         paciente_id=paciente.id,
@@ -611,15 +624,27 @@ def create_historial():
         if field not in data:
             return jsonify({'error': f'Campo {field} requerido'}), 400
     
+    # Obtener el médico actual
+    medico = Medico.query.filter_by(usuario_id=current_id).first()
+    if not medico:
+        return jsonify({'error': 'Médico no encontrado'}), 404
+    
     historial = HistorialMedico(
         paciente_id=data['paciente_id'],
-        medico_id=data.get('medico_id'),
+        medico_id=medico.id,
         cita_id=data.get('cita_id'),
         diagnostico=data['diagnostico'],
         tratamiento=data.get('tratamiento', ''),
         observaciones=data.get('observaciones', '')
     )
     db.session.add(historial)
+    
+    # Si se proporciona cita_id, marcar la cita como completada
+    if data.get('cita_id'):
+        cita = Cita.query.get(data['cita_id'])
+        if cita:
+            cita.estado = 'completada'
+    
     db.session.commit()
     
     return jsonify(historial.to_dict()), 201
@@ -631,12 +656,15 @@ def init_db():
     try:
         db.create_all()
         
-        # Migración: agregar columna cedula si no existe
+        # Migración: agregar columna cedula si no existe (solo si la tabla ya existe)
         try:
             db.session.execute(db.text("ALTER TABLE pacientes ADD COLUMN cedula VARCHAR(20)"))
             db.session.commit()
-        except:
+        except Exception as e:
             db.session.rollback()
+        
+        # Crear tablas si no existen
+        db.create_all()
         
         rol_paciente = Rol.query.filter_by(nombre='paciente').first()
         rol_medico = Rol.query.filter_by(nombre='medico').first()
@@ -714,8 +742,8 @@ def init_db():
             db.session.add(medico)
             db.session.flush()
             
-            # Disponibilidad del médico (Lun-Vie 8am-5pm)
-            for dia in range(1, 6):
+            # Disponibilidad del médico (Lun-Dom 8am-5pm)
+            for dia in range(1, 8):
                 disp = Disponibilidad(
                     medico_id=medico.id,
                     dia_semana=dia,

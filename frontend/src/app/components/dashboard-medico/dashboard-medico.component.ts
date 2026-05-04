@@ -16,7 +16,7 @@ export class DashboardMedicoComponent implements OnInit {
   user: any;
   medicoId = 0;
   activeTab = 'agenda';
-  filterFecha = new Date().toISOString().split('T')[0];
+  filterFecha = '';
   citas: any[] = [];
   disponibilidad: any[] = [];
   pacientes: any[] = [];
@@ -28,7 +28,8 @@ export class DashboardMedicoComponent implements OnInit {
   notificationMessage = '';
   
   nuevaDisp: any = { dia_semana: '1', hora_inicio: '08:00', hora_fin: '17:00' };
-  nuevoHistorial: any = { paciente_id: '', diagnostico: '', tratamiento: '', observaciones: '' };
+  nuevoHistorial: any = { paciente_id: '', diagnostico: '', tratamiento: '', observaciones: '', cita_id: null };
+  citasPaciente: any[] = [];
 
   constructor(private authService: AuthService, private api: ApiService, private router: Router) {}
 
@@ -56,7 +57,10 @@ export class DashboardMedicoComponent implements OnInit {
   }
 
   loadCitas(): void {
-    this.api.getCitas({ medico_id: this.medicoId, fecha: this.filterFecha }).subscribe({
+    const filters: any = { medico_id: this.medicoId };
+    if (this.filterFecha) filters.fecha = this.filterFecha;
+    
+    this.api.getCitas(filters).subscribe({
       next: (data: any) => this.citas = data,
       error: (err: any) => console.error(err)
     });
@@ -132,20 +136,46 @@ export class DashboardMedicoComponent implements OnInit {
   }
 
   getDiaNombre(dia: number): string {
-    const dias = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+    const dias = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
     return dias[dia] || '';
   }
 
+  onPacienteChange(): void {
+    this.nuevoHistorial.cita_id = null;
+    this.citasPaciente = this.citas.filter(c => 
+      c.paciente_id === Number(this.nuevoHistorial.paciente_id) && 
+      (c.estado === 'pendiente' || c.estado === 'confirmada')
+    );
+  }
+
+  getCitasPaciente(): any[] {
+    return this.citasPaciente;
+  }
+
   registrarHistorial(): void {
+    if (!this.nuevoHistorial.paciente_id || !this.nuevoHistorial.diagnostico) {
+      this.showNotify('Por favor complete los campos requeridos', 'error');
+      return;
+    }
+    
     this.loading = true;
-    this.api.createHistorial(this.nuevoHistorial).subscribe({
+    const historialData = {
+      paciente_id: this.nuevoHistorial.paciente_id,
+      diagnostico: this.nuevoHistorial.diagnostico,
+      tratamiento: this.nuevoHistorial.tratamiento,
+      observaciones: this.nuevoHistorial.observaciones,
+      cita_id: this.nuevoHistorial.cita_id || null
+    };
+    
+    this.api.createHistorial(historialData).subscribe({
       next: () => {
-        alert('Historial registrado');
-        this.nuevoHistorial = { paciente_id: '', diagnostico: '', tratamiento: '', observaciones: '' };
+        this.showNotify('Historial médico registrado correctamente', 'success');
+        this.nuevoHistorial = { paciente_id: '', diagnostico: '', tratamiento: '', observaciones: '', cita_id: null };
         this.loading = false;
+        this.loadCitas();
       },
       error: (err: any) => {
-        alert(err.error?.error || 'Error');
+        this.showNotify(err.error?.error || 'Error al registrar historial', 'error');
         this.loading = false;
       }
     });

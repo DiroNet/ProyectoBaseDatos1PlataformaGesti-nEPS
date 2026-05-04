@@ -177,8 +177,11 @@ class HistorialMedico(db.Model):
     tratamiento = db.Column(db.Text)
     observaciones = db.Column(db.Text)
     
+    medico = db.relationship('Medico', backref='historial')
+    cita = db.relationship('Cita', backref='historial')
+    
     def to_dict(self):
-        return {
+        data = {
             'id': self.id,
             'paciente_id': self.paciente_id,
             'medico_id': self.medico_id,
@@ -188,6 +191,21 @@ class HistorialMedico(db.Model):
             'tratamiento': self.tratamiento,
             'observaciones': self.observaciones
         }
+        # Agregar información del médico
+        if self.medico:
+            data['medico'] = {
+                'nombre': self.medico.usuario.nombre if self.medico.usuario else '',
+                'apellido': self.medico.usuario.apellido if self.medico.usuario else '',
+                'especialidad': self.medico.especialidad
+            }
+        # Agregar información de la cita
+        if self.cita:
+            data['cita'] = {
+                'fecha': str(self.cita.fecha),
+                'hora': str(self.cita.hora),
+                'tipo_consulta': self.cita.tipo_consulta
+            }
+        return data
 
 class Especialidad(db.Model):
     __tablename__ = 'especialidades'
