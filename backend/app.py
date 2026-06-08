@@ -15,8 +15,46 @@ bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 db.init_app(app)
 
+def init_default_data():
+    """Inicializa datos por defecto si no existen"""
+    try:
+        existing_admin = Usuario.query.filter_by(email='admin@eps.com').first()
+        if not existing_admin:
+            hashed = bcrypt.generate_password_hash('admin123').decode('utf-8')
+            admin = Usuario(nombre='Administrador', email='admin@eps.com', password=hashed, rol='ADMIN')
+            db.session.add(admin)
+            db.session.flush()
+            print("[EPS] Admin creado: admin@eps.com / admin123")
+
+        planes_default = [
+            {'nombre': 'Plan Basico', 'descripcion': 'Cobertura basica essential', 'costo': 50000},
+            {'nombre': 'Plan Estandar', 'descripcion': 'Cobertura estandar con especialidades', 'costo': 100000},
+            {'nombre': 'Plan Premium', 'descripcion': 'Cobertura completa con todos los beneficios', 'costo': 200000},
+        ]
+        for p in planes_default:
+            if not Plan.query.filter_by(nombre=p['nombre']).first():
+                db.session.add(Plan(**p))
+                print(f"[EPS] Plan creado: {p['nombre']}")
+
+        centros_default = [
+            {'nombre': 'Centro Medico Central', 'direccion': 'Calle 1 #1-1', 'ciudad': 'Bogota'},
+            {'nombre': 'Clinica Norte', 'direccion': 'Calle 100 #50-20', 'ciudad': 'Bogota'},
+            {'nombre': 'Hospital del Sur', 'direccion': 'Av. Caracas #30-15', 'ciudad': 'Bogota'},
+        ]
+        for c in centros_default:
+            if not CentroSalud.query.filter_by(nombre=c['nombre']).first():
+                db.session.add(CentroSalud(**c))
+                print(f"[EPS] Centro creado: {c['nombre']}")
+
+        db.session.commit()
+        print("[EPS] Datos inicializados correctamente")
+    except Exception as e:
+        db.session.rollback()
+        print(f"[EPS] Error inicializando datos: {e}")
+
 with app.app_context():
     db.create_all()
+    init_default_data()
 
 def validate_email(email):
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -29,19 +67,9 @@ def index():
 @app.route('/api/init', methods=['POST'])
 def init_db():
     try:
-        existing_admin = db.session.execute(db.text("SELECT id_usuario FROM usuarios WHERE email='admin@eps.com'")).fetchone()
-        
-        if not existing_admin:
-            hashed = bcrypt.generate_password_hash('admin123').decode('utf-8')
-            db.session.execute(
-                db.text("INSERT INTO usuarios (nombre, email, password, rol) VALUES (:nombre, :email, :password, :rol)"),
-                {'nombre': 'Administrador', 'email': 'admin@eps.com', 'password': hashed, 'rol': 'ADMIN'}
-            )
-            db.session.commit()
-            
+        init_default_data()
         return jsonify({'message': 'Base de datos EPS inicializada correctamente'}), 200
     except Exception as e:
-        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/auth/register', methods=['POST'])
