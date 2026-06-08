@@ -1,0 +1,97 @@
+.error-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
+  padding: 20px;
+}
+
+.error-content {
+  text-align: center;
+  background: white;
+  padding: 60px 80px;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+  max-width: 500px;
+}
+
+.error-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+}
+
+.error-icon i {
+  font-size: 36px;
+  color: #DC2626;
+}
+
+.error-code {
+  font-size: 80px;
+  font-weight: 800;
+  color: #0369a1;
+  margin: 0;
+  line-height: 1;
+}
+
+.error-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1E293B;
+  margin: 16px 0 8px;
+}
+
+.error-description {
+  font-size: 16px;
+  color: #64748B;
+  margin: 0 0 32px;
+}
+
+.error-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.btn-home, .btn-login {
+  padding: 14px 28px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-home {
+  background: #0369a1;
+  color: white;
+}
+
+.btn-home:hover {
+  background: #0284c7;
+  color: white;
+}
+
+.btn-login {
+  background: #F1F5F9;
+  color: #475569;
+  border: 2px solid #E2E8F0;
+}
+
+.btn-login:hover {
+  background: #E2E8F0;
+  color: #1E293B;
+}
+
+.btn-home i, .btn-login i {
+  font-size: 16px;
+}

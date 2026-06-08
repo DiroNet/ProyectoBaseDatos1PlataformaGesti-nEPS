@@ -1,0 +1,156 @@
+<div class="dashboard-container">
+  <div *ngIf="initialLoading" class="loading-overlay">
+    <div class="loading-spinner">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Cargando tu información...</p>
+    </div>
+  </div>
+
+  <ng-container *ngIf="!initialLoading">
+    <header class="dashboard-header">
+    <h1>EPS Bienestar - Panel de Profesional</h1>
+    <div class="user-info">
+      <span>Bienvenido, Dr. {{ user?.nombre }}</span>
+      <span class="badge profesional">{{ user?.rol }}</span>
+      <button (click)="logout()" class="btn-logout">Cerrar Sesión</button>
+    </div>
+  </header>
+
+  <nav class="dashboard-nav">
+    <button [class.active]="activeTab === 'citas'" (click)="activeTab = 'citas'">Citas</button>
+    <button [class.active]="activeTab === 'atender'" (click)="activeTab = 'atender'">Atender Cita</button>
+    <button [class.active]="activeTab === 'disponibilidad'" (click)="activeTab = 'disponibilidad'">Disponibilidad</button>
+    <button [class.active]="activeTab === 'historial'" (click)="activeTab = 'historial'">Historial Clínico</button>
+  </nav>
+
+  <main class="dashboard-content">
+    <!-- Citas -->
+    <section *ngIf="activeTab === 'citas'" class="tab-content">
+      <h2>Citas Programadas</h2>
+      <div *ngIf="citas.length === 0" class="empty-state">
+        <p>No hay citas programadas</p>
+      </div>
+      <div class="cards-grid">
+        <div *ngFor="let cita of citas" class="card">
+          <div class="card-header">
+            <span class="badge" [class]="cita.estado.toLowerCase()">{{ cita.estado }}</span>
+            <span class="date">{{ cita.fecha | date:'short' }}</span>
+          </div>
+          <div class="card-body">
+            <p><strong>Afiliado:</strong> {{ cita.afiliado?.usuario?.nombre }}</p>
+            <p><strong>Documento:</strong> {{ cita.afiliado?.documento }}</p>
+            <p><strong>Centro:</strong> {{ cita.centro?.nombre }}</p>
+          </div>
+          <div class="card-footer" *ngIf="cita.estado === 'PENDIENTE'">
+            <button (click)="actualizarEstado(cita, 'CONFIRMADA')" class="btn-success">Confirmar</button>
+            <button (click)="actualizarEstado(cita, 'CANCELADA')" class="btn-danger">Cancelar</button>
+          </div>
+          <div class="card-footer" *ngIf="cita.estado === 'CONFIRMADA'">
+            <button (click)="actualizarEstado(cita, 'FINALIZADA')" class="btn-primary">Finalizar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Atender Cita -->
+    <section *ngIf="activeTab === 'atender'" class="tab-content">
+      <h2>Registrar Atención</h2>
+      <form (ngSubmit)="registrarHistorial()" class="form-container">
+        <div class="form-group">
+          <label>Afiliado</label>
+          <select [(ngModel)]="nuevoHistorial.id_afiliado" name="afiliado" required>
+            <option value="">-- Seleccionar --</option>
+            <option *ngFor="let af of afiliados" [value]="af.id_afiliado">
+              {{ af.usuario?.nombre }} - {{ af.documento }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Diagnóstico</label>
+          <textarea [(ngModel)]="nuevoHistorial.diagnostico" name="diagnostico"
+                    placeholder="Ingrese el diagnóstico" rows="4" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Tratamiento</label>
+          <textarea [(ngModel)]="nuevoHistorial.tratamiento" name="tratamiento"
+                    placeholder="Ingrese el tratamiento" rows="4"></textarea>
+        </div>
+
+        <button type="submit" [disabled]="loading" class="btn-primary">
+          {{ loading ? 'Guardando...' : 'Registrar Atención' }}
+        </button>
+      </form>
+    </section>
+
+    <!-- Disponibilidad -->
+    <section *ngIf="activeTab === 'disponibilidad'" class="tab-content">
+      <h2>Mi Disponibilidad</h2>
+      <div class="form-section">
+        <h3>Agregar Horario</h3>
+        <form (ngSubmit)="agregarDisponibilidad()" class="form-grid">
+          <div class="form-group">
+            <label>Día de la Semana</label>
+            <select [(ngModel)]="nuevaDisp.dia_semana" name="dia_semana" required>
+              <option [ngValue]="1">Lunes</option>
+              <option [ngValue]="2">Martes</option>
+              <option [ngValue]="3">Miércoles</option>
+              <option [ngValue]="4">Jueves</option>
+              <option [ngValue]="5">Viernes</option>
+              <option [ngValue]="6">Sábado</option>
+              <option [ngValue]="7">Domingo</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Hora Inicio</label>
+            <input type="time" [(ngModel)]="nuevaDisp.hora_inicio" name="hora_inicio" required>
+          </div>
+          <div class="form-group">
+            <label>Hora Fin</label>
+            <input type="time" [(ngModel)]="nuevaDisp.hora_fin" name="hora_fin" required>
+          </div>
+          <div class="form-actions">
+            <button type="submit" [disabled]="loading" class="btn-primary">Agregar</button>
+          </div>
+        </form>
+      </div>
+      <div class="list-section">
+        <h3>Horarios Configurados</h3>
+        <div *ngIf="disponibilidad.length === 0" class="empty-state">
+          <p>No hay horarios configurados</p>
+        </div>
+        <div class="disp-list">
+          <div *ngFor="let d of disponibilidad" class="disp-item">
+            <div>
+              <strong>{{ getDiaSemana(d.dia_semana) }}</strong>
+              <span class="hours"> | {{ d.hora_inicio }} - {{ d.hora_fin }}</span>
+            </div>
+            <button (click)="eliminarDisponibilidad(d.id_disponibilidad)" class="btn-inactive">Eliminar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Historial -->
+    <section *ngIf="activeTab === 'historial'" class="tab-content">
+      <h2>Historial Clínico Registrado</h2>
+      <div *ngIf="historial.length === 0" class="empty-state">
+        <p>No hay registros de historial</p>
+      </div>
+      <div class="cards-grid">
+        <div *ngFor="let h of historial" class="card">
+          <div class="card-header">
+            <span class="date">{{ h.fecha | date:'mediumDate' }}</span>
+          </div>
+          <div class="card-body">
+            <p><strong>Afiliado:</strong> {{ h.afiliado?.usuario?.nombre }}</p>
+            <p><strong>Diagnóstico:</strong> {{ h.diagnostico }}</p>
+            <p *ngIf="h.tratamiento"><strong>Tratamiento:</strong> {{ h.tratamiento }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  </ng-container>
+</div>

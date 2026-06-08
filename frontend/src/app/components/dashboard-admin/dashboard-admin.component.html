@@ -1,33 +1,57 @@
 <div class="dashboard-layout">
-  <aside class="sidebar">
+  <div *ngIf="initialLoading" class="loading-overlay">
+    <div class="loading-spinner">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Cargando panel de administración...</p>
+    </div>
+  </div>
+
+  <ng-container *ngIf="!initialLoading">
+    <aside class="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo">
         <div class="logo-icon">
           <i class="fas fa-hospital"></i>
         </div>
         <div class="logo-text">
-          <h2>Bienestar</h2>
-          <p>Administración</p>
+          <h2>EPS</h2>
+          <p>Bienestar</p>
         </div>
       </div>
     </div>
     
     <nav class="sidebar-nav">
-      <a [class.active]="activeTab === 'usuarios'" (click)="activeTab = 'usuarios'" class="nav-item">
+      <a [class.active]="activeTab === 'dashboard'" (click)="activeTab = 'dashboard'" class="nav-item">
+        <i class="fas fa-chart-line"></i>
+        <span>Dashboard</span>
+      </a>
+      <a [class.active]="activeTab === 'afiliados'" (click)="activeTab = 'afiliados'" class="nav-item">
         <i class="fas fa-users"></i>
-        <span>Usuarios</span>
+        <span>Afiliados</span>
+      </a>
+      <a [class.active]="activeTab === 'profesionales'" (click)="activeTab = 'profesionales'" class="nav-item">
+        <i class="fas fa-user-md"></i>
+        <span>Profesionales</span>
+      </a>
+      <a [class.active]="activeTab === 'centros'" (click)="activeTab = 'centros'" class="nav-item">
+        <i class="fas fa-clinic-medical"></i>
+        <span>Centros de Salud</span>
+      </a>
+      <a [class.active]="activeTab === 'planes'" (click)="activeTab = 'planes'" class="nav-item">
+        <i class="fas fa-file-alt"></i>
+        <span>Planes</span>
       </a>
       <a [class.active]="activeTab === 'citas'" (click)="activeTab = 'citas'" class="nav-item">
         <i class="fas fa-calendar-alt"></i>
-        <span>Agenda Global</span>
+        <span>Citas</span>
       </a>
-      <a [class.active]="activeTab === 'medicos'" (click)="activeTab = 'medicos'" class="nav-item">
-        <i class="fas fa-user-md"></i>
-        <span>Médicos</span>
+      <a [class.active]="activeTab === 'facturas'" (click)="activeTab = 'facturas'" class="nav-item">
+        <i class="fas fa-file-invoice-dollar"></i>
+        <span>Facturación</span>
       </a>
-      <a [class.active]="activeTab === 'especialidades'" (click)="activeTab = 'especialidades'" class="nav-item">
-        <i class="fas fa-stethoscope"></i>
-        <span>Especialidades</span>
+      <a [class.active]="activeTab === 'consultas'" (click)="activeTab = 'consultas'" class="nav-item">
+        <i class="fas fa-chart-pie"></i>
+        <span>Consultas</span>
       </a>
     </nav>
     
@@ -37,8 +61,8 @@
           <i class="fas fa-user-shield"></i>
         </div>
         <div class="user-info">
-          <p class="user-name">Administrador</p>
-          <p class="user-role">Admin</p>
+          <p class="user-name">{{ user?.nombre }}</p>
+          <p class="user-role">{{ user?.rol }}</p>
         </div>
       </div>
       <button (click)="logout()" class="btn-logout">
@@ -46,359 +70,418 @@
         Cerrar Sesión
       </button>
     </div>
-  </aside>
-  
+</aside>
+
   <main class="main-content">
-    <div *ngIf="showNotification" [class]="'notification ' + notificationType">
-      <i [class]="notificationType === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
-      {{ notificationMessage }}
-    </div>
-    
-    <!-- Usuarios -->
-    <div *ngIf="activeTab === 'usuarios'" class="tab-content">
-      <div class="content-header">
-        <h1 class="page-title">Gestión de Usuarios</h1>
-        <span class="badge">{{ filteredUsuarios.length }} usuario(s)</span>
-      </div>
-      
-      <div class="filters-bar">
-        <div class="filter-group search">
-          <i class="fas fa-search"></i>
-          <input type="text" [(ngModel)]="searchTerm" placeholder="Buscar usuario...">
+    <!-- Dashboard -->
+    <section *ngIf="activeTab === 'dashboard'" class="content-section">
+      <h2>Panel de Administración - EPS Bienestar</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <i class="fas fa-users"></i>
+          <div class="stat-info">
+            <h3>{{ afiliados.length }}</h3>
+            <p>Afiliados</p>
+          </div>
         </div>
-        <div class="filter-group">
-          <label>Rol:</label>
-          <select [(ngModel)]="filterRol">
-            <option value="">Todos</option>
-            <option value="paciente">Paciente</option>
-            <option value="medico">Médico</option>
-            <option value="administrador">Administrador</option>
-          </select>
+        <div class="stat-card">
+          <i class="fas fa-user-md"></i>
+          <div class="stat-info">
+            <h3>{{ profesionales.length }}</h3>
+            <p>Profesionales</p>
+          </div>
         </div>
-        <div class="filter-group">
-          <label>Estado:</label>
-          <select [(ngModel)]="filterEstado">
-            <option value="">Todos</option>
-            <option value="activo">Activo</option>
-            <option value="inactivo">Inactivo</option>
-          </select>
+        <div class="stat-card">
+          <i class="fas fa-clinic-medical"></i>
+          <div class="stat-info">
+            <h3>{{ centros.length }}</h3>
+            <p>Centros</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-calendar-check"></i>
+          <div class="stat-info">
+            <h3>{{ citas.length }}</h3>
+            <p>Citas</p>
+          </div>
         </div>
       </div>
-      
-      <div class="table-card">
+    </section>
+
+    <!-- Afiliados -->
+    <section *ngIf="activeTab === 'afiliados'" class="content-section">
+      <h2>Gestión de Afiliados</h2>
+      <div class="form-section">
+        <h3>Nuevo Afiliado</h3>
+        <form (ngSubmit)="crearAfiliado()" class="form-grid">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" [(ngModel)]="nuevoAfiliado.email" name="email" required>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" [(ngModel)]="nuevoAfiliado.password" name="password" required>
+          </div>
+          <div class="form-group">
+            <label>Nombre</label>
+            <input type="text" [(ngModel)]="nuevoAfiliado.nombre" name="nombre" required>
+          </div>
+          <div class="form-group">
+            <label>Documento</label>
+            <input type="text" [(ngModel)]="nuevoAfiliado.documento" name="documento">
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input type="text" [(ngModel)]="nuevoAfiliado.telefono" name="telefono">
+          </div>
+          <div class="form-group">
+            <label>Plan</label>
+            <select [(ngModel)]="nuevoAfiliado.id_plan" name="plan">
+              <option [ngValue]="null">-- Seleccionar --</option>
+              <option *ngFor="let p of planes" [value]="p.id_plan">{{ p.nombre }}</option>
+            </select>
+          </div>
+          <div class="form-actions">
+            <button type="submit" [disabled]="loading" class="btn-primary">
+              <span *ngIf="loading" class="spinner"></span>
+              <ng-container *ngIf="!loading">Crear Afiliado</ng-container>
+              <ng-container *ngIf="loading">Creando...</ng-container>
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="list-section">
+        <h3>Lista de Afiliados</h3>
         <table class="data-table">
           <thead>
             <tr>
               <th>Nombre</th>
               <th>Email</th>
+              <th>Documento</th>
               <th>Teléfono</th>
-              <th>Rol</th>
-              <th>Estado</th>
+              <th>Plan</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let a of afiliados">
+              <td>{{ a.usuario?.nombre }}</td>
+              <td>{{ a.usuario?.email }}</td>
+              <td>{{ a.documento }}</td>
+              <td>{{ a.telefono }}</td>
+              <td>{{ a.plan?.nombre }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Profesionales -->
+    <section *ngIf="activeTab === 'profesionales'" class="content-section">
+      <h2>Gestión de Profesionales</h2>
+      <div class="form-section">
+        <h3>Nuevo Profesional</h3>
+        <form (ngSubmit)="crearProfesional()" class="form-grid">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" [(ngModel)]="nuevoProfesional.email" name="email" required>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" [(ngModel)]="nuevoProfesional.password" name="password" required>
+          </div>
+          <div class="form-group">
+            <label>Nombre</label>
+            <input type="text" [(ngModel)]="nuevoProfesional.nombre" name="nombre" required>
+          </div>
+          <div class="form-group">
+            <label>Especialidad</label>
+            <input type="text" [(ngModel)]="nuevoProfesional.especialidad" name="especialidad" required>
+          </div>
+          <div class="form-group">
+            <label>Centro</label>
+            <select [(ngModel)]="nuevoProfesional.id_centro" name="centro">
+              <option [ngValue]="null">-- Seleccionar --</option>
+              <option *ngFor="let c of centros" [value]="c.id_centro">{{ c.nombre }}</option>
+            </select>
+          </div>
+          <div class="form-actions">
+            <button type="submit" [disabled]="loading" class="btn-primary">
+              <span *ngIf="loading" class="spinner"></span>
+              <ng-container *ngIf="!loading">Crear Profesional</ng-container>
+              <ng-container *ngIf="loading">Creando...</ng-container>
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="list-section">
+        <h3>Lista de Profesionales</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Especialidad</th>
+              <th>Centro</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of profesionales">
+              <td>{{ p.usuario?.nombre }}</td>
+              <td>{{ p.usuario?.email }}</td>
+              <td>{{ p.especialidad }}</td>
+              <td>{{ p.centro?.nombre }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Centros -->
+    <section *ngIf="activeTab === 'centros'" class="content-section">
+      <h2>Centros de Salud</h2>
+      <div class="form-section">
+        <h3>{{ editandoCentro ? 'Editar Centro' : 'Nuevo Centro' }}</h3>
+        <form (ngSubmit)="crearCentro()" class="form-grid">
+          <div class="form-group">
+            <label>Nombre</label>
+            <input type="text" [(ngModel)]="nuevoCentro.nombre" name="nombre" required>
+          </div>
+          <div class="form-group">
+            <label>Dirección</label>
+            <input type="text" [(ngModel)]="nuevoCentro.direccion" name="direccion">
+          </div>
+          <div class="form-group">
+            <label>Ciudad</label>
+            <input type="text" [(ngModel)]="nuevoCentro.ciudad" name="ciudad">
+          </div>
+          <div class="form-actions">
+            <button type="submit" [disabled]="loading" class="btn-primary">
+              <span *ngIf="loading" class="spinner"></span>
+              <ng-container *ngIf="!loading">{{ editandoCentro ? 'Guardar' : 'Crear Centro' }}</ng-container>
+              <ng-container *ngIf="loading">{{ editandoCentro ? 'Guardando...' : 'Creando...' }}</ng-container>
+            </button>
+            <button *ngIf="editandoCentro" type="button" (click)="cancelarEdicionCentro()" class="btn-secondary">Cancelar</button>
+          </div>
+        </form>
+      </div>
+      <div class="list-section">
+        <h3>Lista de Centros</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Dirección</th>
+              <th>Ciudad</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let u of filteredUsuarios">
-              <td class="name-cell">{{ u.nombre }} {{ u.apellido }}</td>
-              <td>{{ u.email }}</td>
-              <td>{{ u.telefono }}</td>
+            <tr *ngFor="let c of centros">
+              <td>{{ c.nombre }}</td>
+              <td>{{ c.direccion }}</td>
+              <td>{{ c.ciudad }}</td>
               <td>
-                <span class="role-badge" [class]="u.rol_nombre">{{ u.rol_nombre }}</span>
-              </td>
-              <td>
-                <span class="status-badge" [class]="u.activo ? 'active' : 'inactive'">
-                  {{ u.activo ? 'Activo' : 'Inactivo' }}
-                </span>
-              </td>
-              <td>
-                <div class="action-buttons">
-                  <button (click)="toggleUsuario(u)" [class]="u.activo ? 'btn-deactivate' : 'btn-activate'" [title]="u.activo ? 'Desactivar' : 'Activar'">
-                    <i [class]="u.activo ? 'fas fa-user-slash' : 'fas fa-user-check'"></i>
-                  </button>
-                  <button (click)="eliminarUsuario(u)" class="btn-delete" title="Eliminar usuario">
-                    <i class="fas fa-trash"></i>
-                  </button>
-                </div>
+                <button (click)="editarCentro(c)" class="btn-small">Editar</button>
+                <button (click)="eliminarCentro(c.id_centro)" class="btn-small btn-danger">Eliminar</button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
-    
-    <!-- Agenda Global -->
-    <div *ngIf="activeTab === 'citas'" class="tab-content">
-      <div class="content-header">
-        <h1 class="page-title">Agenda Global</h1>
-        <span class="badge">{{ citas.length }} cita(s)</span>
-      </div>
-      
-      <div class="filters-bar">
-        <div class="filter-group">
-          <label>Fecha:</label>
-          <input type="date" [(ngModel)]="filterFecha" (change)="loadCitas()" placeholder="Todas">
-        </div>
-        <div class="filter-group">
-          <label>Médico:</label>
-          <select [(ngModel)]="filterMedico" (change)="loadCitas()">
-            <option value="">Todos los médicos</option>
-            <option *ngFor="let m of medicos" [value]="m.id">{{ m.usuario?.nombre }} {{ m.usuario?.apellido }}</option>
-          </select>
-        </div>
-        <div class="filter-group">
-          <label>Estado:</label>
-          <select [(ngModel)]="filterEstado" (change)="loadCitas()">
-            <option value="">Todos los estados</option>
-            <option value="pendiente">Pendiente</option>
-            <option value="confirmada">Confirmada</option>
-            <option value="completada">Completada</option>
-            <option value="cancelada">Cancelada</option>
-          </select>
-        </div>
-      </div>
-      
-      <div *ngIf="citas.length === 0" class="empty-state">
-        <i class="fas fa-calendar-times"></i>
-        <p>No hay citas para los filtros seleccionados</p>
-      </div>
-      
-      <div class="citas-grid">
-        <div *ngFor="let cita of citas" class="cita-card" [class]="cita.estado">
-          <div class="cita-header">
-            <select [value]="cita.estado" (change)="cambiarEstadoCita(cita, $any($event.target).value)" class="estado-select">
-              <option value="pendiente">Pendiente</option>
-              <option value="confirmada">Confirmada</option>
-              <option value="completada">Completada</option>
-              <option value="cancelada">Cancelada</option>
-            </select>
-            <span class="cita-fecha">
-              <i class="fas fa-calendar-alt"></i> {{ cita.fecha }} - {{ cita.hora }}
-            </span>
+    </section>
+
+    <!-- Planes -->
+    <section *ngIf="activeTab === 'planes'" class="content-section">
+      <h2>Planes de Salud</h2>
+      <div class="form-section">
+        <h3>{{ editandoPlan ? 'Editar Plan' : 'Nuevo Plan' }}</h3>
+        <form (ngSubmit)="guardarPlan()" class="form-grid">
+          <div class="form-group">
+            <label>Nombre</label>
+            <input type="text" [(ngModel)]="nuevoPlan.nombre" name="nombre" required>
           </div>
-          <div class="cita-body">
-            <div class="cita-info">
-              <i class="fas fa-user"></i>
-              <div>
-                <strong>Paciente</strong>
-                <span>{{ cita.paciente?.usuario?.nombre }} {{ cita.paciente?.usuario?.apellido }}</span>
-              </div>
-            </div>
-            <div class="cita-info">
-              <i class="fas fa-user-md"></i>
-              <div>
-                <strong>Médico</strong>
-                <span>Dr. {{ cita.medico?.usuario?.nombre }} {{ cita.medico?.usuario?.apellido }}</span>
-              </div>
-            </div>
-            <div class="cita-info">
-              <i class="fas fa-stethoscope"></i>
-              <div>
-                <strong>Especialidad</strong>
-                <span>{{ cita.medico?.especialidad }}</span>
-              </div>
-            </div>
-            <div class="cita-info">
-              <i class="fas fa-heartbeat"></i>
-              <div>
-                <strong>Tipo de Consulta</strong>
-                <span>{{ cita.tipo_consulta }}</span>
-              </div>
-            </div>
-            <div *ngIf="cita.observaciones" class="cita-info">
-              <i class="fas fa-comment"></i>
-              <div>
-                <strong>Observaciones</strong>
-                <span>{{ cita.observaciones }}</span>
-              </div>
-            </div>
+          <div class="form-group">
+            <label>Descripción</label>
+            <input type="text" [(ngModel)]="nuevoPlan.descripcion" name="descripcion">
           </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Médicos -->
-    <div *ngIf="activeTab === 'medicos'" class="tab-content">
-      <div class="content-header">
-        <h1 class="page-title">Gestión de Médicos</h1>
-        <div class="header-actions">
-          <span class="badge">{{ medicos.length }} médico(s)</span>
-          <button (click)="showAgregarMedico = true" class="btn-add">
-            <i class="fas fa-plus"></i> Agregar Médico
-          </button>
-        </div>
-      </div>
-      
-      <div *ngIf="showAgregarMedico" class="modal-overlay">
-        <div class="modal">
-          <div class="modal-header">
-            <h3>Agregar Nuevo Médico</h3>
-            <button (click)="showAgregarMedico = false" class="modal-close">
-              <i class="fas fa-times"></i>
+          <div class="form-group">
+            <label>Costo</label>
+            <input type="number" [(ngModel)]="nuevoPlan.costo" name="costo" required>
+          </div>
+          <div class="form-actions">
+            <button type="submit" [disabled]="loading" class="btn-primary">
+              <span *ngIf="loading" class="spinner"></span>
+              <ng-container *ngIf="!loading">{{ editandoPlan ? 'Guardar' : 'Crear Plan' }}</ng-container>
+              <ng-container *ngIf="loading">{{ editandoPlan ? 'Guardando...' : 'Creando...' }}</ng-container>
             </button>
+            <button *ngIf="editandoPlan" type="button" (click)="cancelarEdicionPlan()" class="btn-secondary">Cancelar</button>
           </div>
-          <form (ngSubmit)="agregarMedico()" class="modal-form">
-            <div class="form-row">
-              <div class="form-group">
-                <label>Nombre:</label>
-                <input type="text" [(ngModel)]="nuevoMedico.nombre" name="nombre" required>
-              </div>
-              <div class="form-group">
-                <label>Apellido:</label>
-                <input type="text" [(ngModel)]="nuevoMedico.apellido" name="apellido" required>
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Email:</label>
-              <input type="email" [(ngModel)]="nuevoMedico.email" name="email" required>
-            </div>
-            <div class="form-group">
-              <label>Teléfono:</label>
-              <input type="tel" [(ngModel)]="nuevoMedico.telefono" name="telefono" required placeholder="Número de teléfono">
-            </div>
-            <div class="form-group">
-              <label>Contraseña:</label>
-              <input type="password" [(ngModel)]="nuevoMedico.password" name="password" required>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Especialidad:</label>
-                <select [(ngModel)]="nuevoMedico.especialidad_id" name="especialidad_id" required>
-                  <option value="">Seleccionar...</option>
-                  <option *ngFor="let esp of especialidades" [value]="esp.id">
-                    {{ esp.nombre }}
-                  </option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Cédula Profesional:</label>
-                <input type="text" [(ngModel)]="nuevoMedico.cedula_profesional" name="cedula" required>
-              </div>
-            </div>
-            <button type="submit" class="btn-submit">
-              <i class="fas fa-save"></i> Guardar Médico
-            </button>
-          </form>
-        </div>
+        </form>
       </div>
-      
-      <div class="table-card">
+      <div class="list-section">
+        <h3>Lista de Planes</h3>
         <table class="data-table">
           <thead>
             <tr>
               <th>Nombre</th>
-              <th>Email</th>
-              <th>Teléfono</th>
-              <th>Especialidad</th>
-              <th>Cédula</th>
+              <th>Descripción</th>
+              <th>Costo</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of planes">
+              <td>{{ p.nombre }}</td>
+              <td>{{ p.descripcion }}</td>
+              <td>{{ p.costo | currency }}</td>
+              <td>
+                <button (click)="editarPlan(p)" class="btn-small">Editar</button>
+                <button (click)="eliminarPlan(p.id_plan)" class="btn-small btn-danger">Eliminar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Citas -->
+    <section *ngIf="activeTab === 'citas'" class="content-section">
+      <h2>Gestión de Citas</h2>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Afiliado</th>
+            <th>Profesional</th>
+            <th>Centro</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of citas">
+            <td>{{ c.fecha | date:'short' }}</td>
+            <td>{{ c.afiliado?.usuario?.nombre }}</td>
+            <td>{{ c.profesional?.usuario?.nombre }}</td>
+            <td>{{ c.centro?.nombre }}</td>
+            <td>
+              <span class="badge" [class]="c.estado.toLowerCase()">{{ c.estado }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Facturas -->
+    <section *ngIf="activeTab === 'facturas'" class="content-section">
+      <h2>Facturación</h2>
+      <div class="form-section">
+        <h3>Nueva Factura</h3>
+        <form (ngSubmit)="crearFactura()" class="form-grid">
+          <div class="form-group">
+            <label>Afiliado</label>
+            <select [(ngModel)]="nuevaFactura.id_afiliado" name="afiliado" required>
+              <option value="">-- Seleccionar --</option>
+              <option *ngFor="let a of afiliados" [value]="a.id_afiliado">{{ a.usuario?.nombre }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Total</label>
+            <input type="number" [(ngModel)]="nuevaFactura.total" name="total" required>
+          </div>
+          <div class="form-actions">
+            <button type="submit" [disabled]="loading" class="btn-primary">
+              <span *ngIf="loading" class="spinner"></span>
+              <ng-container *ngIf="!loading">Crear Factura</ng-container>
+              <ng-container *ngIf="loading">Creando...</ng-container>
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="list-section">
+        <h3>Lista de Facturas</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Afiliado</th>
+              <th>Total</th>
               <th>Estado</th>
               <th>Acción</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let m of medicos">
-              <td class="name-cell">Dr. {{ m.usuario?.nombre }} {{ m.usuario?.apellido }}</td>
-              <td>{{ m.usuario?.email }}</td>
-              <td>{{ m.usuario?.telefono }}</td>
-              <td>{{ m.especialidad }}</td>
-              <td>{{ m.cedula_profesional }}</td>
+            <tr *ngFor="let f of facturas">
+              <td>{{ f.fecha | date:'mediumDate' }}</td>
+              <td>{{ f.afiliado?.usuario?.nombre }}</td>
+              <td>${{ f.total | number }}</td>
               <td>
-                <span class="status-badge" [class]="m.activo ? 'active' : 'inactive'">
-                  {{ m.activo ? 'Activo' : 'Inactivo' }}
-                </span>
+                <span class="badge" [class]="f.estado.toLowerCase()">{{ f.estado }}</span>
               </td>
               <td>
-                <button (click)="eliminarMedico(m)" class="btn-delete" title="Eliminar médico">
-                  <i class="fas fa-trash"></i>
-                </button>
+                <span *ngIf="f.estado === 'PENDIENTE'" (click)="pagarFactura(f)" class="btn-small">Pagar</span>
+                <span *ngIf="f.estado === 'PAGADA'" class="badge pagada">Pagada</span>
+                <button (click)="eliminarFactura(f.id_factura)" class="btn-small btn-danger">Eliminar</button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
-    
-    <!-- Especialidades -->
-    <div *ngIf="activeTab === 'especialidades'" class="tab-content">
-      <div class="content-header">
-        <h1 class="page-title">Gestión de Especialidades</h1>
-        <div class="header-actions">
-          <span class="badge">{{ especialidades.length }} especialidad(es)</span>
-          <button (click)="showAgregarEspecialidad = true" class="btn-add">
-            <i class="fas fa-plus"></i> Agregar Especialidad
-          </button>
-        </div>
-      </div>
-      
-      <div *ngIf="showAgregarEspecialidad" class="modal-overlay">
-        <div class="modal">
-          <div class="modal-header">
-            <h3>Agregar Nueva Especialidad</h3>
-            <button (click)="showAgregarEspecialidad = false" class="modal-close">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <form (ngSubmit)="agregarEspecialidad()" class="modal-form">
-            <div class="form-group">
-              <label>Nombre de la Especialidad:</label>
-              <input type="text" [(ngModel)]="nuevaEspecialidad.nombre" name="nombre" required>
-            </div>
-            <div class="form-group">
-              <label>Descripción:</label>
-              <textarea [(ngModel)]="nuevaEspecialidad.descripcion" name="descripcion" rows="3"></textarea>
-            </div>
-            <button type="submit" class="btn-submit">
-              <i class="fas fa-save"></i> Guardar Especialidad
-            </button>
-          </form>
-        </div>
-      </div>
-      
-      <div class="table-card">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Nombre</th>
-              <th>Descripción</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let e of especialidades">
-              <td>{{ e.id }}</td>
-              <td class="name-cell">{{ e.nombre }}</td>
-              <td>{{ e.descripcion }}</td>
-              <td>
-                <span class="status-badge" [class]="e.activo ? 'active' : 'inactive'">
-                  {{ e.activo ? 'Activo' : 'Inactivo' }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </main>
+    </section>
 
-  <!-- Modal de Confirmación de Eliminación -->
-  <div *ngIf="showConfirmDelete" class="modal-overlay">
-    <div class="modal confirm-modal">
-      <div class="modal-icon warning">
-        <i class="fas fa-exclamation-triangle"></i>
+    <!-- Consultas -->
+    <section *ngIf="activeTab === 'consultas'" class="content-section">
+      <h2>Consultas y Reportes</h2>
+
+      
+
+      <div class="tables-grid">
+        <div class="table-card">
+          <h3>Facturas Pendientes</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Afiliado</th>
+                <th>Facturas</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let f of facturasPendientes">
+                <td>{{ f.nombre }}</td>
+                <td>{{ f.facturas_pendientes }}</td>
+                <td>${{ f.total_pendiente | number }}</td>
+              </tr>
+              <tr *ngIf="facturasPendientes.length === 0">
+                <td colspan="3" class="text-center">No hay facturas pendientes</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-card">
+          <h3>Diagnósticos Frecuentes</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Especialidad</th>
+                <th>Diagnóstico</th>
+                <th>Cantidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let d of diagnosticosFrecuentes">
+                <td>{{ d.especialidad }}</td>
+                <td>{{ d.diagnostico }}</td>
+                <td>{{ d.cantidad }}</td>
+              </tr>
+              <tr *ngIf="diagnosticosFrecuentes.length === 0">
+                <td colspan="3" class="text-center">No hay diagnósticos registrados</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <h3>Confirmar eliminación</h3>
-      <p *ngIf="deleteType === 'usuario'">
-        ¿Estás seguro de eliminar al usuario <strong>{{ deleteTarget?.nombre }} {{ deleteTarget?.apellido }}</strong>?
-        Esta acción no se puede deshacer.
-      </p>
-      <p *ngIf="deleteType === 'medico'">
-        ¿Estás seguro de eliminar al médico <strong>Dr. {{ deleteTarget?.usuario?.nombre }} {{ deleteTarget?.usuario?.apellido }}</strong>?
-        Esta acción no se puede deshacer.
-      </p>
-      <div class="modal-actions">
-        <button (click)="cancelarEliminar()" class="btn-cancel">Cancelar</button>
-        <button (click)="confirmarEliminar()" class="btn-confirm-delete">Eliminar</button>
-      </div>
-    </div>
-  </div>
+    </section>
+  </main>
+  </ng-container>
 </div>

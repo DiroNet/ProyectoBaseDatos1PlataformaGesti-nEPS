@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { ApiService } from '../../services/api.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-register',
@@ -12,90 +14,99 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './register.component.css'
 })
 export class RegisterComponent {
-  rol = 'paciente';
   email = '';
   password = '';
   confirmPassword = '';
   nombre = '';
-  apellido = '';
+  documento = '';
   telefono = '';
-  cedula = '';
-  fecha_nacimiento = '';
   direccion = '';
-  especialidad = '';
-  cedula_profesional = '';
-  error = '';
-  success = '';
+  fechaNacimiento = '';
+  id_plan: number | null = null;
+  planes: any[] = [];
   loading = false;
-  showNotification = false;
-  notificationType = '';
-  notificationMessage = '';
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private api: ApiService,
+    private notification: NotificationService
+  ) {
+    this.loadPlanes();
+  }
 
-  showNotify(message: string, type: string, duration = 3000): void {
-    this.notificationMessage = message;
-    this.notificationType = type;
-    this.showNotification = true;
-    setTimeout(() => this.showNotification = false, duration);
+  loadPlanes(): void {
+    this.api.getPlanes().subscribe({
+      next: (data: any) => this.planes = data,
+      error: (err: any) => console.error(err)
+    });
+  }
+
+  filtrarNumeros(event: any, campo: string): void {
+    const input = event.target;
+    const valor = input.value.replace(/\D/g, '');
+    if (campo === 'documento') {
+      this.documento = valor;
+    } else if (campo === 'telefono') {
+      this.telefono = valor;
+    }
   }
 
   onSubmit(): void {
-    this.loading = true;
-    this.error = '';
-    this.success = '';
-    
+    if (!this.email || !this.password || !this.nombre) {
+      this.notification.error('Complete los campos requeridos');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(this.email)) {
+      this.notification.error('Ingrese un email válido');
+      return;
+    }
+
+    if (this.password.length < 6) {
+      this.notification.error('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
     if (this.password !== this.confirmPassword) {
-      this.error = 'Las contraseñas no coinciden';
-      this.loading = false;
-      this.showNotify(this.error, 'error');
+      this.notification.error('Las contraseñas no coinciden');
       return;
     }
 
-    if (!this.cedula) {
-      this.error = 'Por favor ingrese su cédula';
-      this.loading = false;
-      this.showNotify(this.error, 'error');
+    if (!this.documento || this.documento.length < 6 || this.documento.length > 10) {
+      this.notification.error('La cédula debe tener entre 6 y 10 dígitos');
       return;
     }
 
-    if (!this.fecha_nacimiento) {
-      this.error = 'Por favor ingrese su fecha de nacimiento';
-      this.loading = false;
-      this.showNotify(this.error, 'error');
+    if (!/^3\d{9}$/.test(this.telefono)) {
+      this.notification.error('El teléfono debe ser un número móvil colombiano (10 dígitos, empieza con 3)');
       return;
     }
 
-    if (!this.telefono) {
-      this.error = 'Por favor ingrese su teléfono';
-      this.loading = false;
-      this.showNotify(this.error, 'error');
-      return;
-    }
+    this.loading = true;
 
     const data: any = {
-      rol: 'paciente',
+      rol: 'AFILIADO',
       email: this.email,
       password: this.password,
       nombre: this.nombre,
-      apellido: this.apellido,
+      documento: this.documento,
       telefono: this.telefono,
-      cedula: this.cedula,
-      fecha_nacimiento: this.fecha_nacimiento,
-      direccion: this.direccion
+      direccion: this.direccion,
+      fecha_nacimiento: this.fechaNacimiento,
+      id_plan: this.id_plan
     };
 
     this.authService.register(data).subscribe({
       next: () => {
-        this.success = 'Registro exitoso. Por favor inicie sesión.';
+        this.notification.success('Registro exitoso. Ahora puede iniciar sesión.');
         this.loading = false;
-        this.showNotify(this.success, 'success');
         setTimeout(() => this.router.navigate(['/login']), 2000);
       },
       error: (err: any) => {
-        this.error = err.error?.error || 'Error al registrar';
         this.loading = false;
-        this.showNotify(this.error, 'error');
+        this.notification.error(err.error?.error || 'Error al registrar');
       }
     });
   }

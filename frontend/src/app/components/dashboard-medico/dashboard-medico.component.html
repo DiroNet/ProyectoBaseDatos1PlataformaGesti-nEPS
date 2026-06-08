@@ -48,11 +48,6 @@
   </aside>
   
   <main class="main-content">
-    <div *ngIf="showNotification" [class]="'notification ' + notificationType">
-      <i [class]="notificationType === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
-      {{ notificationMessage }}
-    </div>
-    
     <!-- Agenda -->
     <div *ngIf="activeTab === 'agenda'" class="tab-content">
       <div class="content-header">

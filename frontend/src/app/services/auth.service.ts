@@ -7,8 +7,8 @@ import { Observable, tap } from 'rxjs';
 })
 export class AuthService {
   private apiUrl = 'http://localhost:5000/api';
-  private tokenKey = 'auth_token';
-  private userKey = 'user_data';
+  private tokenKey = 'eps_token';
+  private userKey = 'eps_user';
 
   currentUser = signal<any>(this.getStoredUser());
 
@@ -48,7 +48,19 @@ export class AuthService {
 
   getUserRole(): string {
     const user = this.getUser();
-    return user?.rol_nombre || '';
+    return user?.rol || '';
+  }
+
+  isAfiliado(): boolean {
+    return this.getUserRole() === 'AFILIADO';
+  }
+
+  isAdmin(): boolean {
+    return this.getUserRole() === 'ADMIN';
+  }
+
+  isProfesional(): boolean {
+    return this.getUserRole() === 'PROFESIONAL';
   }
 
   private getStoredUser(): any {

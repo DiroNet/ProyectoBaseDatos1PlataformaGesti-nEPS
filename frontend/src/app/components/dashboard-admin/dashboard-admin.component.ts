@@ -4,285 +4,412 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
-import { DataRefreshService } from '../../services/data-refresh.service';
-import { Subscription } from 'rxjs';
+import { NotificationService } from '../../services/notification.service';
+import { RealtimeService } from '../../services/realtime.service';
 
 @Component({
   selector: 'app-dashboard-admin',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './dashboard-admin.component.html',
-  styleUrls: ['./dashboard-admin.component.css']
+  styleUrl: './dashboard-admin.component.css'
 })
 export class DashboardAdminComponent implements OnInit, OnDestroy {
-  activeTab = 'usuarios';
-  filterFecha = '';
-  filterMedico = '';
-  filterEstado = '';
-  usuarios: any[] = [];
-  medicos: any[] = [];
-  citas: any[] = [];
-  especialidades: any[] = [];
-  
-  // Filtros
-  searchTerm = '';
-  filterRol = '';
-  
-  // Notificaciones
-  showNotification = false;
-  private refreshSub: Subscription | null = null;
-  notificationType = '';
-  notificationMessage = '';
-  
-  // Modal de eliminación
-  showConfirmDelete = false;
-  deleteTarget: any = null;
-  deleteType: '' | 'usuario' | 'medico' = '';
-  
-  // Nuevo médico
-  showAgregarMedico = false;
-  nuevoMedico: any = { nombre: '', apellido: '', email: '', telefono: '', password: '', especialidad_id: '', cedula_profesional: '' };
+  user: any;
+  activeTab = 'dashboard';
+  loading = false;
+  initialLoading = true;
 
-  // Nueva especialidad
-  showAgregarEspecialidad = false;
-  nuevaEspecialidad: any = { nombre: '', descripcion: '' };
+  afiliados: any[] = [];
+  profesionales: any[] = [];
+  centros: any[] = [];
+  planes: any[] = [];
+  citas: any[] = [];
+  facturas: any[] = [];
+
+  facturasPendientes: any[] = [];
+  facturacionPlan: any[] = [];
+  diagnosticosFrecuentes: any[] = [];
+  centrosUtilizados: any[] = [];
+
+  filterYear = new Date().getFullYear();
+  filterPlan: number | null = null;
+  filterCentro: number | null = null;
+
+  nuevoAfiliado: any = { email: '', password: '', nombre: '', documento: '', telefono: '', direccion: '', id_plan: null };
+  nuevoProfesional: any = { email: '', password: '', nombre: '', especialidad: '', id_centro: null };
+  nuevoCentro: any = { nombre: '', direccion: '', ciudad: '' };
+  nuevaFactura: any = { id_afiliado: '', total: 0 };
+  nuevoPlan: any = { nombre: '', descripcion: '', costo: 0 };
+  editandoPlan = false;
+  editandoCentro = false;
 
   constructor(
-    private authService: AuthService, 
-    private api: ApiService, 
+    private authService: AuthService,
+    private api: ApiService,
     private router: Router,
-    private refreshService: DataRefreshService
+    private notification: NotificationService,
+    private realtime: RealtimeService
   ) {}
 
   ngOnInit(): void {
-    const user = this.authService.getUser();
-    if (!user || this.authService.getUserRole() !== 'administrador') {
+    this.user = this.authService.getUser();
+    if (!this.user || this.authService.getUserRole() !== 'ADMIN') {
       this.router.navigate(['/login']);
       return;
     }
-    this.loadUsuarios();
-    this.loadMedicos();
-    this.loadCitas();
-    this.loadEspecialidades();
-    
-    this.refreshSub = this.refreshService.refresh$.subscribe((type: string) => {
-      if (type === 'usuarios' || type === 'all') this.loadUsuarios();
-      if (type === 'citas' || type === 'all') this.loadCitas();
-      if (type === 'medicos' || type === 'all') this.loadMedicos();
-    });
+    this.loadData();
+    this.initDatabase();
   }
 
   ngOnDestroy(): void {
-    this.refreshSub?.unsubscribe();
+    this.realtime.stopAllPolling();
   }
 
-  showNotify(message: string, type: string, duration = 3000): void {
-    this.notificationMessage = message;
-    this.notificationType = type;
-    this.showNotification = true;
-    setTimeout(() => this.showNotification = false, duration);
+  startRealtimeUpdates(): void {
+    this.realtime.startPolling('admin-afiliados', () => this.loadAfiliadosSilent());
+    this.realtime.startPolling('admin-profesionales', () => this.loadProfesionalesSilent());
+    this.realtime.startPolling('admin-centros', () => this.loadCentrosSilent());
+    this.realtime.startPolling('admin-planes', () => this.loadPlanesSilent());
+    this.realtime.startPolling('admin-citas', () => this.loadCitasSilent());
+    this.realtime.startPolling('admin-facturas', () => this.loadFacturasSilent());
   }
 
-  get filteredUsuarios(): any[] {
-    return this.usuarios.filter(u => {
-      const matchesSearch = !this.searchTerm || 
-        u.nombre?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        u.apellido?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        u.email?.toLowerCase().includes(this.searchTerm.toLowerCase());
-      
-      const matchesRol = !this.filterRol || u.rol_nombre === this.filterRol;
-      const matchesEstado = !this.filterEstado || 
-        (this.filterEstado === 'activo' && u.activo) ||
-        (this.filterEstado === 'inactivo' && !u.activo);
-      
-      return matchesSearch && matchesRol && matchesEstado;
-    });
-  }
-
-  loadUsuarios(): void {
-    this.api.getUsuarios().subscribe({
-      next: (data: any) => this.usuarios = data,
+  initDatabase(): void {
+    this.api.initDB().subscribe({
+      next: () => console.log('Base de datos inicializada'),
       error: (err: any) => console.error(err)
     });
   }
 
-  loadMedicos(): void {
-    this.api.getMedicos().subscribe({
-      next: (data: any) => this.medicos = data,
-      error: (err: any) => console.error(err)
+  loadData(): void {
+    this.initialLoading = true;
+    Promise.all([
+      this.loadAfiliadosPromise(),
+      this.loadProfesionalesPromise(),
+      this.loadCentrosPromise(),
+      this.loadPlanesPromise(),
+      this.loadCitasPromise(),
+      this.loadFacturasPromise()
+    ]).then(() => {
+      this.initialLoading = false;
+      this.loadConsultas();
+    }).catch(() => {
+      this.initialLoading = false;
     });
   }
 
-  loadCitas(): void {
-    const filters: any = {};
-    if (this.filterFecha) filters.fecha = this.filterFecha;
-    if (this.filterMedico) filters.medico_id = Number(this.filterMedico);
-    if (this.filterEstado) filters.estado = this.filterEstado;
-    
-    this.api.getCitas(filters).subscribe({
+  loadAfiliadosPromise(): Promise<void> {
+    return new Promise((resolve) => {
+      this.api.getAfiliados().subscribe({
+        next: (data: any) => { this.afiliados = data; resolve(); },
+        error: () => resolve()
+      });
+    });
+  }
+
+  loadProfesionalesPromise(): Promise<void> {
+    return new Promise((resolve) => {
+      this.api.getProfesionales().subscribe({
+        next: (data: any) => { this.profesionales = data; resolve(); },
+        error: () => resolve()
+      });
+    });
+  }
+
+  loadCentrosPromise(): Promise<void> {
+    return new Promise((resolve) => {
+      this.api.getCentros().subscribe({
+        next: (data: any) => { this.centros = data; resolve(); },
+        error: () => resolve()
+      });
+    });
+  }
+
+  loadPlanesPromise(): Promise<void> {
+    return new Promise((resolve) => {
+      this.api.getPlanes().subscribe({
+        next: (data: any) => { this.planes = data; resolve(); },
+        error: () => resolve()
+      });
+    });
+  }
+
+  loadCitasPromise(): Promise<void> {
+    return new Promise((resolve) => {
+      this.api.getCitas().subscribe({
+        next: (data: any) => { this.citas = data; resolve(); },
+        error: () => resolve()
+      });
+    });
+  }
+
+  loadFacturasPromise(): Promise<void> {
+    return new Promise((resolve) => {
+      this.api.getFacturas().subscribe({
+        next: (data: any) => { this.facturas = data; resolve(); },
+        error: () => resolve()
+      });
+    });
+  }
+
+  loadAfiliadosSilent(): void {
+    this.api.getAfiliados().subscribe({
+      next: (data: any) => this.afiliados = data,
+      error: () => {}
+    });
+  }
+
+  loadProfesionalesSilent(): void {
+    this.api.getProfesionales().subscribe({
+      next: (data: any) => this.profesionales = data,
+      error: () => {}
+    });
+  }
+
+  loadCentrosSilent(): void {
+    this.api.getCentros().subscribe({
+      next: (data: any) => this.centros = data,
+      error: () => {}
+    });
+  }
+
+  loadPlanesSilent(): void {
+    this.api.getPlanes().subscribe({
+      next: (data: any) => this.planes = data,
+      error: () => {}
+    });
+  }
+
+  loadCitasSilent(): void {
+    this.api.getCitas().subscribe({
       next: (data: any) => this.citas = data,
+      error: () => {}
+    });
+  }
+
+  loadFacturasSilent(): void {
+    this.api.getFacturas().subscribe({
+      next: (data: any) => this.facturas = data,
+      error: () => {}
+    });
+  }
+
+  loadConsultas(): void {
+    this.api.getAfiliadosFacturasPendientes().subscribe({
+      next: (data: any) => this.facturasPendientes = data,
+      error: (err: any) => console.error(err)
+    });
+    this.api.getFacturacionPorPlan().subscribe({
+      next: (data: any) => this.facturacionPlan = data,
+      error: (err: any) => console.error(err)
+    });
+    this.api.getDiagnosticosFrecuentes().subscribe({
+      next: (data: any) => this.diagnosticosFrecuentes = data,
+      error: (err: any) => console.error(err)
+    });
+    this.api.getCentrosMasUtilizados().subscribe({
+      next: (data: any) => this.centrosUtilizados = data,
       error: (err: any) => console.error(err)
     });
   }
 
-  cambiarEstadoCita(cita: any, nuevoEstado: string): void {
-    this.api.updateCita(cita.id, { estado: nuevoEstado }).subscribe({
+  crearAfiliado(): void {
+    if (!this.nuevoAfiliado.email || !this.nuevoAfiliado.password || !this.nuevoAfiliado.nombre) {
+      this.notification.error('Complete los campos requeridos');
+      return;
+    }
+    this.loading = true;
+    this.api.createAfiliado(this.nuevoAfiliado).subscribe({
       next: () => {
-        cita.estado = nuevoEstado;
-        this.showNotify(`Cita actualizada a ${nuevoEstado}`, 'success');
-        this.refreshService.triggerRefresh('citas');
+        this.notification.success('Afiliado creado exitosamente');
+        this.loading = false;
+        this.nuevoAfiliado = { email: '', password: '', nombre: '', documento: '', telefono: '', direccion: '', id_plan: null };
+        this.loadAfiliadosSilent();
       },
-      error: (err: any) => this.showNotify(err.error?.error || 'Error al actualizar cita', 'error')
+      error: (err: any) => {
+        this.notification.error(err.error?.error || 'Error al crear');
+        this.loading = false;
+      }
     });
   }
 
-  loadEspecialidades(): void {
-    this.api.getEspecialidades().subscribe({
-      next: (data: any) => this.especialidades = data,
-      error: (err: any) => console.error(err)
-    });
-  }
-
-  agregarEspecialidad(): void {
-    this.api.createEspecialidad(this.nuevaEspecialidad).subscribe({
+  crearProfesional(): void {
+    if (!this.nuevoProfesional.email || !this.nuevoProfesional.password || !this.nuevoProfesional.nombre) {
+      this.notification.error('Complete los campos requeridos');
+      return;
+    }
+    this.loading = true;
+    this.api.createProfesional(this.nuevoProfesional).subscribe({
       next: () => {
-        this.showNotify('Especialidad agregada correctamente', 'success');
-        this.loadEspecialidades();
-        this.showAgregarEspecialidad = false;
-        this.nuevaEspecialidad = { nombre: '', descripcion: '' };
+        this.notification.success('Profesional creado exitosamente');
+        this.loading = false;
+        this.nuevoProfesional = { email: '', password: '', nombre: '', especialidad: '', id_centro: null };
+        this.loadProfesionalesSilent();
       },
-      error: (err: any) => this.showNotify(err.error?.error || 'Error al agregar especialidad', 'error')
+      error: (err: any) => {
+        this.notification.error(err.error?.error || 'Error al crear');
+        this.loading = false;
+      }
     });
   }
 
-  toggleUsuario(usuario: any): void {
-    const newEstado = !usuario.activo;
-    this.api.updateUsuario(usuario.id, { 
-      activo: newEstado,
-      estado_id: newEstado ? 1 : 2  // 1 = activo, 2 = inactivo
-    }).subscribe({
-      next: () => {
-        usuario.activo = newEstado;
-        usuario.estado = newEstado ? 'activo' : 'inactivo';
-        this.showNotify(`Usuario ${newEstado ? 'activado' : 'desactivado'} correctamente`, 'success');
-        this.refreshService.triggerRefresh('usuarios');
-      },
-      error: (err: any) => this.showNotify(err.error?.error || 'Error al actualizar usuario', 'error')
-    });
-  }
-
-  eliminarUsuario(usuario: any): void {
-    this.deleteTarget = usuario;
-    this.deleteType = 'usuario';
-    this.showConfirmDelete = true;
-  }
-
-  confirmarEliminar(): void {
-    if (!this.deleteTarget || !this.deleteType) return;
-    
-    if (this.deleteType === 'usuario') {
-      this.api.deleteUsuario(this.deleteTarget.id).subscribe({
+  crearCentro(): void {
+    if (!this.nuevoCentro.nombre) {
+      this.notification.error('Ingrese el Nombre del centro');
+      return;
+    }
+    this.loading = true;
+    if (this.editandoCentro) {
+      this.api.updateCentro(this.nuevoCentro.id, this.nuevoCentro).subscribe({
         next: () => {
-          this.showNotify('Usuario eliminado correctamente', 'success');
-          this.loadUsuarios();
-          this.refreshService.triggerRefresh('usuarios');
+          this.notification.success('Centro actualizado');
+          this.loading = false;
+          this.nuevoCentro = { nombre: '', direccion: '', ciudad: '' };
+          this.editandoCentro = false;
+          this.loadCentrosSilent();
         },
-        error: (err: any) => this.showNotify(err.error?.error || 'Error al eliminar usuario', 'error')
+        error: (err: any) => {
+          this.notification.error(err.error?.error || 'Error al actualizar');
+          this.loading = false;
+        }
       });
-    } else if (this.deleteType === 'medico') {
-      this.api.deleteMedico(this.deleteTarget.id).subscribe({
+    } else {
+      this.api.createCentro(this.nuevoCentro).subscribe({
         next: () => {
-          this.showNotify('Médico eliminado correctamente', 'success');
-          this.loadMedicos();
-          this.refreshService.triggerRefresh('medicos');
+          this.notification.success('Centro creado exitosamente');
+          this.loading = false;
+          this.nuevoCentro = { nombre: '', direccion: '', ciudad: '' };
+          this.loadCentrosSilent();
         },
-        error: (err: any) => this.showNotify(err.error?.error || 'Error al eliminar médico', 'error')
+        error: (err: any) => {
+          this.notification.error(err.error?.error || 'Error al crear');
+          this.loading = false;
+        }
       });
     }
-    
-    this.showConfirmDelete = false;
-    this.deleteTarget = null;
-    this.deleteType = '';
   }
 
-  cancelarEliminar(): void {
-    this.showConfirmDelete = false;
-    this.deleteTarget = null;
-    this.deleteType = '';
-  }
-
-  agregarMedico(): void {
-    // Validar campos requeridos
-    if (!this.nuevoMedico.email || !this.nuevoMedico.email.includes('@')) {
-      this.showNotify('Ingrese un correo electrónico válido', 'error');
+  crearFactura(): void {
+    if (!this.nuevaFactura.id_afiliado || !this.nuevaFactura.total) {
+      this.notification.error('Complete los campos requeridos');
       return;
     }
-    if (!this.nuevoMedico.password || this.nuevoMedico.password.length < 6) {
-      this.showNotify('La contraseña debe tener al menos 6 caracteres', 'error');
-      return;
-    }
-    if (!this.nuevoMedico.nombre || this.nuevoMedico.nombre.trim() === '') {
-      this.showNotify('Ingrese el nombre del médico', 'error');
-      return;
-    }
-    if (!this.nuevoMedico.apellido || this.nuevoMedico.apellido.trim() === '') {
-      this.showNotify('Ingrese el apellido del médico', 'error');
-      return;
-    }
-    if (!this.nuevoMedico.telefono || this.nuevoMedico.telefono.trim() === '') {
-      this.showNotify('Ingrese el teléfono del médico', 'error');
-      return;
-    }
-    if (!this.nuevoMedico.cedula_profesional || this.nuevoMedico.cedula_profesional.trim() === '') {
-      this.showNotify('Ingrese la cédula profesional', 'error');
-      return;
-    }
-    if (!this.nuevoMedico.especialidad_id) {
-      this.showNotify('Seleccione una especialidad', 'error');
-      return;
-    }
-
-    const espId = this.nuevoMedico.especialidad_id;
-    const espSeleccionada = espId ? this.especialidades.find(e => String(e.id) === String(espId)) : null;
-    const data = {
-      nombre: this.nuevoMedico.nombre.trim(),
-      apellido: this.nuevoMedico.apellido.trim(),
-      email: this.nuevoMedico.email.trim().toLowerCase(),
-      telefono: this.nuevoMedico.telefono?.trim() || '',
-      password: this.nuevoMedico.password,
-      especialidad: espSeleccionada?.nombre || '',
-      especialidad_id: espId ? Number(espId) : null,
-      cedula_profesional: this.nuevoMedico.cedula_profesional.trim()
-    };
-    this.api.createMedico(data).subscribe({
+    this.loading = true;
+    this.api.createFactura(this.nuevaFactura).subscribe({
       next: () => {
-        this.showNotify('Médico agregado correctamente', 'success');
-        this.loadMedicos();
-        this.loadUsuarios();
-        this.refreshService.triggerRefresh('medicos');
-        this.refreshService.triggerRefresh('usuarios');
-        this.showAgregarMedico = false;
-        this.nuevoMedico = { nombre: '', apellido: '', email: '', telefono: '', password: '', especialidad_id: '', cedula_profesional: '' };
+        this.notification.success('Factura creada exitosamente');
+        this.loading = false;
+        this.nuevaFactura = { id_afiliado: '', total: 0 };
+        this.loadFacturasSilent();
       },
-      error: (err: any) => this.showNotify(err.error?.error || 'Error al agregar médico', 'error')
+      error: (err: any) => {
+        this.notification.error(err.error?.error || 'Error al crear');
+        this.loading = false;
+      }
     });
   }
 
-  toggleMedico(medico: any): void {
-    this.api.updateMedico(medico.id, { activo: !medico.activo }).subscribe({
+  pagarFactura(factura: any): void {
+    this.api.pagarFactura(factura.id_factura, 'Efectivo').subscribe({
       next: () => {
-        medico.activo = !medico.activo;
-        this.showNotify(`Médico ${medico.activo ? 'activado' : 'desactivado'} correctamente`, 'success');
-        this.refreshService.triggerRefresh('medicos');
+        this.notification.success('Factura pagada');
+        this.loadFacturasSilent();
       },
-      error: (err: any) => this.showNotify(err.error?.error || 'Error al actualizar médico', 'error')
+      error: (err: any) => this.notification.error(err.error?.error || 'Error')
     });
   }
 
-  eliminarMedico(medico: any): void {
-    this.deleteTarget = medico;
-    this.deleteType = 'medico';
-    this.showConfirmDelete = true;
+  eliminarFactura(id: number): void {
+    this.notification.confirmDanger('¿Está seguro de eliminar esta factura?', () => {
+      this.api.deleteFactura(id).subscribe({
+        next: () => {
+          this.notification.success('Factura eliminada');
+          this.loadFacturasSilent();
+        },
+        error: (err: any) => this.notification.error(err.error?.error || 'Error al eliminar')
+      });
+    });
+  }
+
+  guardarPlan(): void {
+    if (!this.nuevoPlan.nombre || !this.nuevoPlan.costo) {
+      this.notification.error('Complete los campos requeridos');
+      return;
+    }
+    this.loading = true;
+    if (this.editandoPlan) {
+      this.api.updatePlan(this.nuevoPlan.id, this.nuevoPlan).subscribe({
+        next: () => {
+          this.notification.success('Plan actualizado');
+          this.loading = false;
+          this.nuevoPlan = { nombre: '', descripcion: '', costo: 0 };
+          this.editandoPlan = false;
+          this.loadPlanesSilent();
+        },
+        error: (err: any) => {
+          this.notification.error(err.error?.error || 'Error al actualizar');
+          this.loading = false;
+        }
+      });
+    } else {
+      this.api.createPlan(this.nuevoPlan).subscribe({
+        next: () => {
+          this.notification.success('Plan creado exitosamente');
+          this.loading = false;
+          this.nuevoPlan = { nombre: '', descripcion: '', costo: 0 };
+          this.loadPlanesSilent();
+        },
+        error: (err: any) => {
+          this.notification.error(err.error?.error || 'Error al crear');
+          this.loading = false;
+        }
+      });
+    }
+  }
+
+  editarPlan(plan: any): void {
+    this.nuevoPlan = { id: plan.id_plan, nombre: plan.nombre, descripcion: plan.descripcion, costo: plan.costo };
+    this.editandoPlan = true;
+  }
+
+  eliminarPlan(id: number): void {
+    this.notification.confirmDanger('¿Está seguro de eliminar este plan?', () => {
+      this.api.deletePlan(id).subscribe({
+        next: () => {
+          this.notification.success('Plan eliminado');
+          this.loadPlanesSilent();
+        },
+        error: (err: any) => this.notification.error(err.error?.error || 'Error al eliminar')
+      });
+    });
+  }
+
+  cancelarEdicionPlan(): void {
+    this.nuevoPlan = { nombre: '', descripcion: '', costo: 0 };
+    this.editandoPlan = false;
+  }
+
+  editarCentro(centro: any): void {
+    this.nuevoCentro = { id: centro.id_centro, nombre: centro.nombre, direccion: centro.direccion, ciudad: centro.ciudad };
+    this.editandoCentro = true;
+  }
+
+  eliminarCentro(id: number): void {
+    this.notification.confirmDanger('¿Está seguro de eliminar este centro?', () => {
+      this.api.deleteCentro(id).subscribe({
+        next: () => {
+          this.notification.success('Centro eliminado');
+          this.loadCentrosSilent();
+        },
+        error: (err: any) => this.notification.error(err.error?.error || 'Error al eliminar')
+      });
+    });
+  }
+
+  cancelarEdicionCentro(): void {
+    this.editandoCentro = false;
+    this.nuevoCentro = { nombre: '', direccion: '', ciudad: '' };
   }
 
   logout(): void {

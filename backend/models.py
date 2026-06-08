@@ -1,258 +1,220 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone, timedelta
-from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
 def get_colombia_datetime():
     return datetime.now(timezone(timedelta(hours=-5)))
 
-class Rol(db.Model):
-    __tablename__ = 'roles'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(20), unique=True, nullable=False)
-    descripcion = db.Column(db.Text)
-    
-    def to_dict(self):
-        return {'id': self.id, 'nombre': self.nombre, 'descripcion': self.descripcion}
-
-class Estado(db.Model):
-    __tablename__ = 'estados'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(50), unique=True, nullable=False)
-    descripcion = db.Column(db.Text)
-    color = db.Column(db.String(20))
-    
-    def to_dict(self):
-        return {'id': self.id, 'nombre': self.nombre, 'descripcion': self.descripcion, 'color': self.color}
-
 class Usuario(db.Model):
     __tablename__ = 'usuarios'
     
-    id = db.Column(db.Integer, primary_key=True)
+    id_usuario = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
-    nombre = db.Column(db.String(100), nullable=False)
-    apellido = db.Column(db.String(100), nullable=False)
-    telefono = db.Column(db.String(20))
-    rol_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
-    activo = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    rol = db.Column(db.Enum('AFILIADO', 'ADMIN', 'PROFESIONAL'), nullable=False)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     
-    rol = db.relationship('Rol', backref='usuarios')
-    
-    def set_password(self, password):
-        self.password = generate_password_hash(password)
-    
-    def check_password(self, password):
-        return check_password_hash(self.password, password)
-    
-    def to_dict(self, include_paciente=False, include_medico=False):
-        data = {
-            'id': self.id,
-            'email': self.email,
+    def to_dict(self):
+        return {
+            'id_usuario': self.id_usuario,
             'nombre': self.nombre,
-            'apellido': self.apellido,
-            'telefono': self.telefono,
-            'rol_id': self.rol_id,
-            'rol_nombre': self.rol.nombre if self.rol else None,
-            'activo': self.activo,
-            'estado': 'activo' if self.activo else 'inactivo'
+            'email': self.email,
+            'rol': self.rol,
+            'fecha_creacion': str(self.fecha_creacion) if self.fecha_creacion else None
         }
-        # Buscar paciente directamente por usuario_id
-        paciente = Paciente.query.filter_by(usuario_id=self.id).first()
-        if paciente:
-            data['paciente_id'] = paciente.id
-        # Buscar médico directamente por usuario_id
-        medico = Medico.query.filter_by(usuario_id=self.id).first()
-        if medico:
-            data['medico_id'] = medico.id
-        return data
 
-class Paciente(db.Model):
-    __tablename__ = 'pacientes'
+class Plan(db.Model):
+    __tablename__ = 'planes'
     
-    id = db.Column(db.Integer, primary_key=True)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), unique=True, nullable=False)
-    cedula = db.Column(db.String(20), unique=True)
+    id_plan = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    descripcion = db.Column(db.Text)
+    costo = db.Column(db.Numeric(10, 2))
+    
+    def to_dict(self):
+        return {
+            'id_plan': self.id_plan,
+            'nombre': self.nombre,
+            'descripcion': self.descripcion,
+            'costo': float(self.costo) if self.costo else None
+        }
+
+class Afiliado(db.Model):
+    __tablename__ = 'afiliados'
+    
+    id_afiliado = db.Column(db.Integer, primary_key=True)
+    id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id_usuario'), nullable=False)
+    documento = db.Column(db.String(20))
     fecha_nacimiento = db.Column(db.Date)
-    direccion = db.Column(db.Text)
-    historial_clinico = db.Column(db.Text)
+    telefono = db.Column(db.String(20))
+    direccion = db.Column(db.String(150))
+    id_plan = db.Column(db.Integer, db.ForeignKey('planes.id_plan'))
     
-    usuario = db.relationship('Usuario', backref='paciente')
-    citas = db.relationship('Cita', backref='paciente', lazy='dynamic')
-    historial = db.relationship('HistorialMedico', backref='paciente', lazy='dynamic')
+    usuario = db.relationship('Usuario', backref='afiliado')
+    plan = db.relationship('Plan', backref='afiliados')
+    citas = db.relationship('Cita', backref='afiliado', lazy='dynamic')
+    facturas = db.relationship('Factura', backref='afiliado', lazy='dynamic')
+    historial = db.relationship('HistorialClinico', backref='afiliado', lazy='dynamic')
     
     def to_dict(self):
         return {
-            'id': self.id,
-            'usuario_id': self.usuario_id,
-            'cedula': self.cedula,
+            'id_afiliado': self.id_afiliado,
+            'id_usuario': self.id_usuario,
+            'documento': self.documento,
             'fecha_nacimiento': str(self.fecha_nacimiento) if self.fecha_nacimiento else None,
+            'telefono': self.telefono,
             'direccion': self.direccion,
-            'usuario': self.usuario.to_dict() if self.usuario else None
+            'id_plan': self.id_plan,
+            'plan': self.plan.to_dict() if self.plan else None,
+            'usuario': {'nombre': self.usuario.nombre, 'email': self.usuario.email} if self.usuario else None
         }
 
-class Medico(db.Model):
-    __tablename__ = 'medicos'
+class CentroSalud(db.Model):
+    __tablename__ = 'centros_salud'
     
-    id = db.Column(db.Integer, primary_key=True)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), unique=True, nullable=False)
+    id_centro = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    direccion = db.Column(db.String(150))
+    ciudad = db.Column(db.String(50))
+    
+    profesionales = db.relationship('Profesional', backref='centro', lazy='dynamic')
+    citas = db.relationship('Cita', backref='centro', lazy='dynamic')
+    
+    def to_dict(self):
+        return {
+            'id_centro': self.id_centro,
+            'nombre': self.nombre,
+            'direccion': self.direccion,
+            'ciudad': self.ciudad
+        }
+
+class Profesional(db.Model):
+    __tablename__ = 'profesionales'
+    
+    id_profesional = db.Column(db.Integer, primary_key=True)
+    id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id_usuario'), nullable=False)
     especialidad = db.Column(db.String(100), nullable=False)
-    cedula_profesional = db.Column(db.String(50), unique=True)
-    activo = db.Column(db.Boolean, default=True)
+    id_centro = db.Column(db.Integer, db.ForeignKey('centros_salud.id_centro'))
     
-    usuario = db.relationship('Usuario', backref='medico')
-    disponibilidad = db.relationship('Disponibilidad', backref='medico', lazy='dynamic', cascade='all, delete-orphan')
-    citas = db.relationship('Cita', backref='medico', lazy='dynamic')
-    historial = db.relationship('HistorialMedico', backref='medico_rel', lazy='dynamic')
+    usuario = db.relationship('Usuario', backref='profesional')
+    citas = db.relationship('Cita', backref='profesional', lazy='dynamic')
+    historiales = db.relationship('HistorialClinico', backref='profesional', lazy='dynamic')
     
     def to_dict(self):
         return {
-            'id': self.id,
-            'usuario_id': self.usuario_id,
+            'id_profesional': self.id_profesional,
+            'id_usuario': self.id_usuario,
             'especialidad': self.especialidad,
-            'cedula_profesional': self.cedula_profesional,
-            'activo': self.activo,
-            'usuario': self.usuario.to_dict() if self.usuario else None
+            'id_centro': self.id_centro,
+            'centro': self.centro.to_dict() if self.centro else None,
+            'usuario': {'nombre': self.usuario.nombre, 'email': self.usuario.email} if self.usuario else None
         }
 
-class Disponibilidad(db.Model):
-    __tablename__ = 'disponibilidad'
+class Factura(db.Model):
+    __tablename__ = 'facturas'
     
-    id = db.Column(db.Integer, primary_key=True)
-    medico_id = db.Column(db.Integer, db.ForeignKey('medicos.id'), nullable=False)
-    dia_semana = db.Column(db.Integer, nullable=False)
-    hora_inicio = db.Column(db.Time, nullable=False)
-    hora_fin = db.Column(db.Time, nullable=False)
-    activo = db.Column(db.Boolean, default=True)
+    id_factura = db.Column(db.Integer, primary_key=True)
+    id_afiliado = db.Column(db.Integer, db.ForeignKey('afiliados.id_afiliado'), nullable=False)
+    fecha = db.Column(db.Date, nullable=False)
+    total = db.Column(db.Numeric(10, 2))
+    estado = db.Column(db.Enum('PENDIENTE', 'PAGADA'), default='PENDIENTE')
+    
+    pagos = db.relationship('Pago', backref='factura', lazy='dynamic')
     
     def to_dict(self):
         return {
-            'id': self.id,
-            'medico_id': self.medico_id,
-            'dia_semana': self.dia_semana,
-            'hora_inicio': str(self.hora_inicio),
-            'hora_fin': str(self.hora_fin),
-            'activo': self.activo
+            'id_factura': self.id_factura,
+            'id_afiliado': self.id_afiliado,
+            'fecha': str(self.fecha) if self.fecha else None,
+            'total': float(self.total) if self.total else None,
+            'estado': self.estado,
+            'afiliado': self.afiliado.to_dict() if self.afiliado else None,
+            'pagos': [p.to_dict() for p in self.pagos]
+        }
+
+class Pago(db.Model):
+    __tablename__ = 'pagos'
+    
+    id_pago = db.Column(db.Integer, primary_key=True)
+    id_factura = db.Column(db.Integer, db.ForeignKey('facturas.id_factura'), nullable=False)
+    fecha = db.Column(db.Date, nullable=False)
+    monto = db.Column(db.Numeric(10, 2))
+    metodo_pago = db.Column(db.String(50))
+    
+    def to_dict(self):
+        return {
+            'id_pago': self.id_pago,
+            'id_factura': self.id_factura,
+            'fecha': str(self.fecha) if self.fecha else None,
+            'monto': float(self.monto) if self.monto else None,
+            'metodo_pago': self.metodo_pago
         }
 
 class Cita(db.Model):
     __tablename__ = 'citas'
     
-    id = db.Column(db.Integer, primary_key=True)
-    paciente_id = db.Column(db.Integer, db.ForeignKey('pacientes.id'), nullable=False)
-    medico_id = db.Column(db.Integer, db.ForeignKey('medicos.id'), nullable=False)
+    id_cita = db.Column(db.Integer, primary_key=True)
+    id_afiliado = db.Column(db.Integer, db.ForeignKey('afiliados.id_afiliado'), nullable=False)
+    id_profesional = db.Column(db.Integer, db.ForeignKey('profesionales.id_profesional'), nullable=False)
+    id_centro = db.Column(db.Integer, db.ForeignKey('centros_salud.id_centro'), nullable=False)
+    fecha = db.Column(db.DateTime, nullable=False)
+    estado = db.Column(db.Enum('PENDIENTE', 'CONFIRMADA', 'CANCELADA', 'FINALIZADA'), default='PENDIENTE')
+    
+    def to_dict(self):
+        return {
+            'id_cita': self.id_cita,
+            'id_afiliado': self.id_afiliado,
+            'id_profesional': self.id_profesional,
+            'id_centro': self.id_centro,
+            'fecha': self.fecha.isoformat() if self.fecha else None,
+            'estado': self.estado,
+            'afiliado': self.afiliado.to_dict() if self.afiliado else None,
+            'profesional': self.profesional.to_dict() if self.profesional else None,
+            'centro': self.centro.to_dict() if self.centro else None
+        }
+
+class HistorialClinico(db.Model):
+    __tablename__ = 'historial_clinico'
+    
+    id_historial = db.Column(db.Integer, primary_key=True)
+    id_afiliado = db.Column(db.Integer, db.ForeignKey('afiliados.id_afiliado'), nullable=False)
+    id_profesional = db.Column(db.Integer, db.ForeignKey('profesionales.id_profesional'), nullable=False)
     fecha = db.Column(db.Date, nullable=False)
-    hora = db.Column(db.Time, nullable=False)
-    tipo_consulta = db.Column(db.String(50), default='Medicina General')
-    estado = db.Column(db.String(20), default='pendiente')
-    observaciones = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=get_colombia_datetime)
-    updated_at = db.Column(db.DateTime, default=get_colombia_datetime, onupdate=get_colombia_datetime)
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'paciente_id': self.paciente_id,
-            'medico_id': self.medico_id,
-            'fecha': str(self.fecha),
-            'hora': str(self.hora),
-            'tipo_consulta': self.tipo_consulta,
-            'estado': self.estado,
-            'observaciones': self.observaciones,
-            'paciente': self.paciente.to_dict() if self.paciente else None,
-            'medico': self.medico.to_dict() if self.medico else None
-        }
-
-class Reprogramacion(db.Model):
-    __tablename__ = 'reprogramaciones'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    cita_id = db.Column(db.Integer, db.ForeignKey('citas.id'), nullable=False)
-    paciente_id = db.Column(db.Integer, db.ForeignKey('pacientes.id'), nullable=False)
-    medico_id = db.Column(db.Integer, db.ForeignKey('medicos.id'), nullable=False)
-    fecha_original = db.Column(db.Date, nullable=False)
-    hora_original = db.Column(db.Time, nullable=False)
-    nueva_fecha = db.Column(db.Date, nullable=False)
-    nueva_hora = db.Column(db.Time, nullable=False)
-    motivo = db.Column(db.Text)
-    estado = db.Column(db.String(20), default='pendiente')
-    created_at = db.Column(db.DateTime, default=get_colombia_datetime)
-    
-    cita = db.relationship('Cita', backref='reprogramaciones')
-    paciente = db.relationship('Paciente', backref='reprogramaciones')
-    medico = db.relationship('Medico', backref='reprogramaciones')
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'cita_id': self.cita_id,
-            'paciente_id': self.paciente_id,
-            'medico_id': self.medico_id,
-            'fecha_original': str(self.fecha_original),
-            'hora_original': str(self.hora_original),
-            'nueva_fecha': str(self.nueva_fecha),
-            'nueva_hora': str(self.nueva_hora),
-            'motivo': self.motivo,
-            'estado': self.estado,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'paciente': self.paciente.to_dict() if self.paciente else None,
-            'medico': self.medico.to_dict() if self.medico else None
-        }
-
-class HistorialMedico(db.Model):
-    __tablename__ = 'historial_medico'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    paciente_id = db.Column(db.Integer, db.ForeignKey('pacientes.id'), nullable=False)
-    medico_id = db.Column(db.Integer, db.ForeignKey('medicos.id'), nullable=False)
-    cita_id = db.Column(db.Integer, db.ForeignKey('citas.id'))
-    fecha_registro = db.Column(db.DateTime, default=get_colombia_datetime)
     diagnostico = db.Column(db.Text)
     tratamiento = db.Column(db.Text)
-    observaciones = db.Column(db.Text)
-    
-    medico = db.relationship('Medico', backref='historiales')
-    cita = db.relationship('Cita', backref='historial_medico')
     
     def to_dict(self):
-        data = {
-            'id': self.id,
-            'paciente_id': self.paciente_id,
-            'medico_id': self.medico_id,
-            'cita_id': self.cita_id,
-            'fecha_registro': str(self.fecha_registro),
+        return {
+            'id_historial': self.id_historial,
+            'id_afiliado': self.id_afiliado,
+            'id_profesional': self.id_profesional,
+            'fecha': str(self.fecha) if self.fecha else None,
             'diagnostico': self.diagnostico,
             'tratamiento': self.tratamiento,
-            'observaciones': self.observaciones
+            'afiliado': self.afiliado.to_dict() if self.afiliado else None,
+            'profesional': self.profesional.to_dict() if self.profesional else None
         }
-        # Agregar información del médico
-        if self.medico:
-            data['medico'] = {
-                'nombre': self.medico.usuario.nombre if self.medico.usuario else '',
-                'apellido': self.medico.usuario.apellido if self.medico.usuario else '',
-                'especialidad': self.medico.especialidad
-            }
-        # Agregar información de la cita
-        if self.cita:
-            data['cita'] = {
-                'fecha': str(self.cita.fecha),
-                'hora': str(self.cita.hora),
-                'tipo_consulta': self.cita.tipo_consulta
-            }
-        return data
 
-class Especialidad(db.Model):
-    __tablename__ = 'especialidades'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), unique=True, nullable=False)
-    descripcion = db.Column(db.Text)
+class DisponibilidadProfesional(db.Model):
+    __tablename__ = 'disponibilidad_profesional'
+
+    id_disponibilidad = db.Column(db.Integer, primary_key=True)
+    id_profesional = db.Column(db.Integer, db.ForeignKey('profesionales.id_profesional'), nullable=False)
+    dia_semana = db.Column(db.Integer, nullable=False)
+    hora_inicio = db.Column(db.Time, nullable=False)
+    hora_fin = db.Column(db.Time, nullable=False)
     activo = db.Column(db.Boolean, default=True)
-    
+
+    profesional = db.relationship('Profesional', backref='disponibilidades')
+
     def to_dict(self):
-        return {'id': self.id, 'nombre': self.nombre, 'descripcion': self.descripcion, 'activo': self.activo}
+        return {
+            'id_disponibilidad': self.id_disponibilidad,
+            'id_profesional': self.id_profesional,
+            'dia_semana': self.dia_semana,
+            'hora_inicio': str(self.hora_inicio) if self.hora_inicio else None,
+            'hora_fin': str(self.hora_fin) if self.hora_fin else None,
+            'activo': self.activo
+        }

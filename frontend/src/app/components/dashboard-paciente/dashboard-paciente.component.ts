@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
+import { NotificationService } from '../../services/notification.service';
 import { DataRefreshService } from '../../services/data-refresh.service';
 import { Subscription } from 'rxjs';
 
@@ -23,21 +24,14 @@ export class DashboardPacienteComponent implements OnInit, OnDestroy {
   especialidades: any[] = [];
   historial: any[] = [];
   loading = false;
-  message = '';
-  messageType = '';
   private refreshSub: Subscription | null = null;
-  showNotification = false;
-  notificationType = '';
-  notificationMessage = '';
-  
-  // Modal de confirmación
+
   showConfirmCancel = false;
   citaAEliminar: any = null;
-  
+
   nuevaCita: any = { medico_id: '', fecha: '', hora: '', tipo_consulta: '' };
   minDate = new Date().toISOString().split('T')[0];
-  
-  // Reprogramación
+
   showReprogramar = false;
   citaReprogramar: any = null;
   nuevaFecha = '';
@@ -45,23 +39,17 @@ export class DashboardPacienteComponent implements OnInit, OnDestroy {
   motivoReprogramacion = '';
   loadingReprogramar = false;
 
-  showNotify(message: string, type: string, duration = 3000): void {
-    this.notificationMessage = message;
-    this.notificationType = type;
-    this.showNotification = true;
-    setTimeout(() => this.showNotification = false, duration);
-  }
-
   constructor(
-    private authService: AuthService, 
-    private api: ApiService, 
+    private authService: AuthService,
+    private api: ApiService,
     private router: Router,
+    private notification: NotificationService,
     private refreshService: DataRefreshService
   ) {}
 
   ngOnInit(): void {
     this.user = this.authService.getUser();
-    if (!this.user || this.authService.getUserRole() !== 'paciente') {
+    if (!this.user || this.authService.getUserRole() !== 'AFILIADO') {
       this.router.navigate(['/login']);
       return;
     }
@@ -69,7 +57,7 @@ export class DashboardPacienteComponent implements OnInit, OnDestroy {
     this.loadMedicos();
     this.loadEspecialidades();
     this.loadHistorial();
-    
+
     this.refreshSub = this.refreshService.refresh$.subscribe((type: string) => {
       if (type === 'citas' || type === 'all') this.loadCitas();
       if (type === 'historial' || type === 'all') this.loadHistorial();
@@ -116,18 +104,18 @@ export class DashboardPacienteComponent implements OnInit, OnDestroy {
   onEspecialidadChange(): void {
     const especialidad = this.nuevaCita.tipo_consulta;
     this.nuevaCita.medico_id = '';
-    
+
     if (!especialidad) {
       this.medicosFiltrados = [];
       return;
     }
-    
-    this.medicosFiltrados = this.medicos.filter(m => 
+
+    this.medicosFiltrados = this.medicos.filter(m =>
       m.especialidad && m.especialidad.toLowerCase() === especialidad.toLowerCase()
     );
-    
+
     if (this.medicosFiltrados.length === 0) {
-      this.showNotify(`No hay médicos disponibles para ${especialidad}`, 'error');
+      this.notification.warning(`No hay médicos disponibles para ${especialidad}`);
     }
   }
 
@@ -140,14 +128,11 @@ export class DashboardPacienteComponent implements OnInit, OnDestroy {
 
   agendarCita(): void {
     this.loading = true;
-    this.message = '';
-    
+
     this.api.createCita(this.nuevaCita).subscribe({
       next: () => {
-        this.message = 'Cita agendada exitosamente';
-        this.messageType = 'success';
+        this.notification.success('Cita agendada exitosamente');
         this.loading = false;
-        this.showNotify(this.message, 'success');
         this.nuevaCita = { medico_id: '', fecha: '', hora: '', tipo_consulta: '' };
         this.medicosFiltrados = [];
         this.loadCitas();
@@ -155,10 +140,8 @@ export class DashboardPacienteComponent implements OnInit, OnDestroy {
         this.activeTab = 'citas';
       },
       error: (err: any) => {
-        this.message = err.error?.error || 'Error al agendar cita';
-        this.messageType = 'error';
         this.loading = false;
-        this.showNotify(this.message, 'error');
+        this.notification.error(err.error?.error || 'Error al agendar cita');
       }
     });
   }
@@ -170,16 +153,16 @@ export class DashboardPacienteComponent implements OnInit, OnDestroy {
 
   confirmarCancelar(): void {
     if (!this.citaAEliminar) return;
-    
+
     this.api.deleteCita(this.citaAEliminar.id).subscribe({
       next: () => {
-        this.showNotify('Cita cancelada correctamente', 'success');
+        this.notification.success('Cita cancelada correctamente');
         this.loadCitas();
         this.refreshService.triggerRefresh('citas');
       },
-      error: (err: any) => this.showNotify(err.error?.error || 'Error al cancelar', 'error')
+      error: (err: any) => this.notification.error(err.error?.error || 'Error al cancelar')
     });
-    
+
     this.showConfirmCancel = false;
     this.citaAEliminar = null;
   }
@@ -204,10 +187,10 @@ export class DashboardPacienteComponent implements OnInit, OnDestroy {
 
   Reprogramar(): void {
     if (!this.nuevaFecha || !this.nuevaHora) {
-      this.showNotify('Seleccione nueva fecha y hora', 'error');
+      this.notification.error('Seleccione nueva fecha y hora');
       return;
     }
-    
+
     this.loadingReprogramar = true;
     this.api.createReprogramacion({
       cita_id: this.citaReprogramar.id,
@@ -216,14 +199,14 @@ export class DashboardPacienteComponent implements OnInit, OnDestroy {
       motivo: this.motivoReprogramacion
     }).subscribe({
       next: () => {
-        this.showNotify('Solicitud de reprogramación enviada', 'success');
+        this.notification.success('Solicitud de reprogramación enviada');
         this.loadingReprogramar = false;
         this.cerrarReprogramar();
         this.loadCitas();
         this.refreshService.triggerRefresh('citas');
       },
       error: (err: any) => {
-        this.showNotify(err.error?.error || 'Error al reprogramar', 'error');
+        this.notification.error(err.error?.error || 'Error al reprogramar');
         this.loadingReprogramar = false;
       }
     });

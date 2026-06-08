@@ -1,25 +1,29 @@
 <div class="auth-container">
   <div class="auth-left">
     <div class="auth-branding">
-      <h1 class="brand-title">Bienestar</h1>
-      <p class="brand-subtitle">Centro Médico</p>
+      <h1 class="brand-title">EPS</h1>
+      <p class="brand-subtitle">Bienestar</p>
       <div class="brand-description">
         <p>Tu salud es nuestra prioridad</p>
-        <p>Atención médica de calidad para ti y tu familia</p>
+        <p>Gestión integral de servicios de salud</p>
       </div>
     </div>
     <div class="auth-features">
       <div class="feature-item">
-        <i class="fas fa-user-md"></i>
-        <span>Médicos especializados</span>
+        <i class="fas fa-users"></i>
+        <span>Afiliaciones y planes</span>
       </div>
       <div class="feature-item">
         <i class="fas fa-calendar-check"></i>
-        <span>Citas en línea</span>
+        <span>Agendamiento de citas</span>
       </div>
       <div class="feature-item">
-        <i class="fas fa-file-medical-record"></i>
-        <span>Historial médico digital</span>
+        <i class="fas fa-file-medical-alt"></i>
+        <span>Historial clínico</span>
+      </div>
+      <div class="feature-item">
+        <i class="fas fa-file-invoice-dollar"></i>
+        <span>Facturación</span>
       </div>
     </div>
   </div>
@@ -27,29 +31,13 @@
   <div class="auth-right">
     <div class="auth-card">
       <h2>Crear Cuenta</h2>
-      
-      <div *ngIf="showNotification" [class]="'notification ' + notificationType">
-        <i [class]="notificationType === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
-        {{ notificationMessage }}
-      </div>
-      
-      <div *ngIf="error && !showNotification" class="alert-error">
-        {{ error }}
-      </div>
+      <p class="subtitle">Regístrate como afiliado EPS Bienestar</p>
       
       <form (ngSubmit)="onSubmit()" class="auth-form">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Nombre</label>
-            <input type="text" [(ngModel)]="nombre" name="nombre" 
-                   placeholder="Juan" required>
-          </div>
-          
-          <div class="form-group">
-            <label>Apellido</label>
-            <input type="text" [(ngModel)]="apellido" name="apellido" 
-                   placeholder="Pérez" required>
-          </div>
+        <div class="form-group">
+          <label>Nombre Completo</label>
+          <input type="text" [(ngModel)]="nombre" name="nombre" 
+                 placeholder="Juan Pérez" required>
         </div>
         
         <div class="form-group">
@@ -59,28 +47,38 @@
         </div>
         
         <div class="form-group">
-          <label>Teléfono</label>
-          <input type="tel" [(ngModel)]="telefono" name="telefono" 
-                 placeholder="3001234567" required>
+          <label>Telefono Celular (Colombia)</label>
+          <input type="tel" [(ngModel)]="telefono" name="telefono"
+                 placeholder="3001234567" required pattern="3[0-9]{9}"
+                 title="Número móvil colombiano - 10 dígitos, empieza con 3" (input)="filtrarNumeros($event, 'telefono')">
         </div>
-        
+
         <div class="form-group">
-          <label>Cédula de Identidad</label>
-          <input type="text" [(ngModel)]="cedula" name="cedula" 
-                 placeholder="12345678" required>
+          <label>Numero de Cedula</label>
+          <input type="text" [(ngModel)]="documento" name="documento"
+                 placeholder="12345678" required pattern="[0-9]{6,10}"
+                 title="Cédula colombiana - entre 6 y 10 dígitos" (input)="filtrarNumeros($event, 'documento')">
         </div>
-        
+
         <div class="form-group">
           <label>Fecha de Nacimiento</label>
-          <input type="date" [(ngModel)]="fecha_nacimiento" name="fecha_nacimiento" required>
+          <input type="date" [(ngModel)]="fechaNacimiento" name="fechaNacimiento">
         </div>
-        
+
         <div class="form-group">
           <label>Dirección</label>
-          <input type="text" [(ngModel)]="direccion" name="direccion" 
+          <input type="text" [(ngModel)]="direccion" name="direccion"
                  placeholder="Calle 123, Ciudad">
         </div>
-        
+
+        <div class="form-group">
+          <label>Plan de Salud</label>
+          <select [(ngModel)]="id_plan" name="plan">
+            <option [ngValue]="null">-- Seleccionar --</option>
+            <option *ngFor="let p of planes" [value]="p.id_plan">{{ p.nombre }} - ${{ p.costo }}</option>
+          </select>
+        </div>
+
         <div class="form-group">
           <label>Contraseña</label>
           <input type="password" [(ngModel)]="password" name="password" 

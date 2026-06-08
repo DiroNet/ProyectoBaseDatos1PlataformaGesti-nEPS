@@ -1,25 +1,29 @@
 <div class="auth-container">
   <div class="auth-left">
     <div class="auth-branding">
-      <h1 class="brand-title">Bienestar</h1>
-      <p class="brand-subtitle">Centro Médico</p>
+      <h1 class="brand-title">EPS</h1>
+      <p class="brand-subtitle">Bienestar</p>
       <div class="brand-description">
         <p>Tu salud es nuestra prioridad</p>
-        <p>Atención médica de calidad para ti y tu familia</p>
+        <p>Gestión integral de servicios de salud</p>
       </div>
     </div>
     <div class="auth-features">
       <div class="feature-item">
-        <i class="fas fa-user-md"></i>
-        <span>Médicos especializados</span>
+        <i class="fas fa-users"></i>
+        <span>Afiliaciones y planes</span>
       </div>
       <div class="feature-item">
         <i class="fas fa-calendar-check"></i>
-        <span>Citas en línea</span>
+        <span>Agendamiento de citas</span>
       </div>
       <div class="feature-item">
         <i class="fas fa-file-medical-alt"></i>
-        <span>Historial médico digital</span>
+        <span>Historial clínico</span>
+      </div>
+      <div class="feature-item">
+        <i class="fas fa-file-invoice-dollar"></i>
+        <span>Facturación</span>
       </div>
     </div>
   </div>
@@ -27,15 +31,7 @@
   <div class="auth-right">
     <div class="auth-card">
       <h2>Iniciar Sesión</h2>
-      
-      <div *ngIf="showNotification" [class]="'notification ' + notificationType">
-        <i [class]="notificationType === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
-        {{ notificationMessage }}
-      </div>
-      
-      <div *ngIf="error && !showNotification" class="alert-error">
-        {{ error }}
-      </div>
+      <p class="subtitle">Accede a tu cuenta EPS Bienestar</p>
       
       <form (ngSubmit)="onSubmit()" class="auth-form">
         <div class="form-group">

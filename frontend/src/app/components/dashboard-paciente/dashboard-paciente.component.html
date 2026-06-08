@@ -45,11 +45,6 @@
   </aside>
   
   <main class="main-content">
-    <div *ngIf="showNotification" [class]="'notification ' + notificationType">
-      <i [class]="notificationType === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
-      {{ notificationMessage }}
-    </div>
-    
     <div class="content-header">
       <h1 class="page-title">Mis Citas Médicas</h1>
       <span class="badge">{{ citas.length }} cita(s)</span>

@@ -2,10 +2,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from flask_bcrypt import Bcrypt
-from datetime import datetime, time, date
+from datetime import datetime, timedelta
 import re
 from config import config
-from models import db, Rol, Usuario, Paciente, Medico, Disponibilidad, Cita, Reprogramacion, HistorialMedico, Especialidad, Estado
+from models import db, Usuario, Afiliado, Plan, CentroSalud, Profesional, Factura, Pago, Cita, HistorialClinico, DisponibilidadProfesional
 
 app = Flask(__name__)
 app.config.from_object(config['development'])
@@ -15,59 +15,43 @@ bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 db.init_app(app)
 
+with app.app_context():
+    db.create_all()
+
 def validate_email(email):
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(pattern, email) is not None
 
-def validate_time(time_str):
-    try:
-        t = datetime.strptime(time_str, '%H:%M').time()
-        return time(6, 0) <= t <= time(20, 0)
-    except:
-        return False
-
 @app.route('/')
 def index():
-    return jsonify({'message': 'API Sistema de Citas Médicas', 'version': '1.0'})
+    return jsonify({'message': 'API Sistema EPS', 'version': '1.0'})
 
-# ============ AUTENTICACIÓN ============
+@app.route('/api/init', methods=['POST'])
+def init_db():
+    try:
+        existing_admin = db.session.execute(db.text("SELECT id_usuario FROM usuarios WHERE email='admin@eps.com'")).fetchone()
+        
+        if not existing_admin:
+            hashed = bcrypt.generate_password_hash('admin123').decode('utf-8')
+            db.session.execute(
+                db.text("INSERT INTO usuarios (nombre, email, password, rol) VALUES (:nombre, :email, :password, :rol)"),
+                {'nombre': 'Administrador', 'email': 'admin@eps.com', 'password': hashed, 'rol': 'ADMIN'}
+            )
+            db.session.commit()
+            
+        return jsonify({'message': 'Base de datos EPS inicializada correctamente'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/auth/register', methods=['POST'])
 def register():
     data = request.get_json()
     
-    required = ['email', 'password', 'nombre', 'apellido', 'rol']
+    required = ['email', 'password', 'nombre', 'rol']
     for field in required:
         if field not in data:
             return jsonify({'error': f'Campo {field} requerido'}), 400
-    
-    # Validar cédula para pacientes
-    if data['rol'] == 'paciente' and not data.get('cedula'):
-        return jsonify({'error': 'Cédula requerida para pacientes'}), 400
-    
-    # Validar fecha de nacimiento para pacientes
-    if data['rol'] == 'paciente' and not data.get('fecha_nacimiento'):
-        return jsonify({'error': 'Fecha de nacimiento requerida para pacientes'}), 400
-    
-    # Validar teléfono para pacientes
-    if data['rol'] == 'paciente' and not data.get('telefono'):
-        return jsonify({'error': 'Teléfono requerido para pacientes'}), 400
-    
-    # Validar que la cédula no esté duplicada
-    if data['rol'] == 'paciente' and data.get('cedula'):
-        cedula_existente = Paciente.query.filter_by(cedula=data['cedula']).first()
-        if cedula_existente:
-            return jsonify({'error': 'La cédula ya está registrada en el sistema'}), 400
-    
-    # Validar cédula profesional para médicos
-    if data['rol'] == 'medico' and not data.get('cedula_profesional'):
-        return jsonify({'error': 'Cédula profesional requerida para médicos'}), 400
-    
-    # Validar que la cédula profesional no esté duplicada
-    if data['rol'] == 'medico' and data.get('cedula_profesional'):
-        medico_existente = Medico.query.filter_by(cedula_profesional=data['cedula_profesional']).first()
-        if medico_existente:
-            return jsonify({'error': 'La cédula profesional ya está registrada en el sistema'}), 400
     
     if not validate_email(data['email']):
         return jsonify({'error': 'Email inválido'}), 400
@@ -75,51 +59,53 @@ def register():
     if Usuario.query.filter_by(email=data['email']).first():
         return jsonify({'error': 'Email ya registrado'}), 400
     
-    rol = Rol.query.filter_by(nombre=data['rol']).first()
-    if not rol:
+    documento = data.get('documento', '')
+    telefono = data.get('telefono', '')
+    
+    if documento:
+        if not documento.isdigit():
+            return jsonify({'error': 'El documento debe contener solo números'}), 400
+        if len(documento) < 6 or len(documento) > 10:
+            return jsonify({'error': 'La cédula debe tener entre 6 y 10 dígitos'}), 400
+        if Afiliado.query.filter_by(documento=documento).first():
+            return jsonify({'error': 'Este número de cédula ya está registrado'}), 400
+    
+    if telefono:
+        if not telefono.isdigit():
+            return jsonify({'error': 'El teléfono debe contener solo números'}), 400
+        if len(telefono) != 10:
+            return jsonify({'error': 'El teléfono debe tener 10 dígitos'}), 400
+        if not telefono.startswith('3'):
+            return jsonify({'error': 'El teléfono debe ser un número móvil (empieza con 3)'}), 400
+        if Afiliado.query.filter_by(telefono=telefono).first():
+            return jsonify({'error': 'Este número de teléfono ya está registrado'}), 400
+    
+    if data['rol'] not in ['AFILIADO', 'ADMIN', 'PROFESIONAL']:
         return jsonify({'error': 'Rol inválido'}), 400
     
     hashed = bcrypt.generate_password_hash(data['password']).decode('utf-8')
     
     usuario = Usuario(
+        nombre=data['nombre'],
         email=data['email'],
         password=hashed,
-        nombre=data['nombre'],
-        apellido=data['apellido'],
-        telefono=data.get('telefono', ''),
-        rol_id=rol.id
+        rol=data['rol']
     )
     db.session.add(usuario)
     db.session.flush()
     
-    if data['rol'] == 'paciente':
-        paciente = Paciente(
-            usuario_id=usuario.id,
-            cedula=data.get('cedula', ''),
-            fecha_nacimiento=datetime.strptime(data.get('fecha_nacimiento', '2000-01-01'), '%Y-%m-%d').date() if data.get('fecha_nacimiento') else None,
-            direccion=data.get('direccion', '')
+    if data['rol'] == 'AFILIADO':
+        afiliado = Afiliado(
+            id_usuario=usuario.id_usuario,
+            documento=data.get('documento', ''),
+            telefono=data.get('telefono', ''),
+            direccion=data.get('direccion', ''),
+            id_plan=data.get('id_plan')
         )
-        db.session.add(paciente)
-    elif data['rol'] == 'medico':
-        medico = Medico(
-            usuario_id=usuario.id,
-            especialidad=data.get('especialidad', 'Medicina General'),
-            cedula_profesional=data.get('cedula_profesional', '')
-        )
-        db.session.add(medico)
-        
-        for day in range(1, 8):
-            disp = Disponibilidad(
-                medico_id=None,
-                dia_semana=day,
-                hora_inicio=time(8, 0),
-                hora_fin=time(17, 0)
-            )
-        db.session.flush()
-        disp.medico_id = medico.id
+        db.session.add(afiliado)
     
     db.session.commit()
-    return jsonify({'message': 'Usuario registrado exitosamente', 'usuario_id': usuario.id}), 201
+    return jsonify({'message': 'Usuario registrado exitosamente', 'id': usuario.id_usuario}), 201
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
@@ -135,37 +121,29 @@ def login():
     
     try:
         password_valido = bcrypt.check_password_hash(usuario.password, data['password'])
-    except Exception:
-        # Si falla bcrypt, probar comparación directa (para usuarios creados manualmente)
+    except:
         password_valido = (usuario.password == data['password'])
     
     if not password_valido:
         return jsonify({'error': 'Credenciales inválidas'}), 401
     
-    if not usuario.activo:
-        return jsonify({'error': 'Usuario inactivo'}), 403
-    
-    token = create_access_token(identity=str(usuario.id))
+    token = create_access_token(identity=str(usuario.id_usuario))
     
     return jsonify({
         'token': token,
         'usuario': usuario.to_dict()
     }), 200
 
-# ============ USUARIOS ============
-
 @app.route('/api/usuarios', methods=['GET'])
 @jwt_required()
 def get_usuarios():
     current_id = int(get_jwt_identity())
-    current_user = Usuario.query.get(current_id)
+    usuario = Usuario.query.get(current_id)
     
-    # Administradores ven todos los usuarios, otros solo activos
-    if current_user.rol.nombre == 'administrador':
-        usuarios = Usuario.query.all()
-    else:
-        usuarios = Usuario.query.filter_by(activo=True).all()
+    if usuario.rol != 'ADMIN':
+        return jsonify({'error': 'No autorizado'}), 403
     
+    usuarios = Usuario.query.all()
     return jsonify([u.to_dict() for u in usuarios]), 200
 
 @app.route('/api/usuarios/<int:user_id>', methods=['GET'])
@@ -178,24 +156,20 @@ def get_usuario(user_id):
 @jwt_required()
 def update_usuario(user_id):
     current_id = int(get_jwt_identity())
-    current_user = Usuario.query.get(current_id)
+    usuario_actual = Usuario.query.get(current_id)
     usuario = Usuario.query.get_or_404(user_id)
     
-    # Solo el propio usuario o un administrador puede modificar
-    if usuario.id != current_id and current_user.rol.nombre != 'administrador':
+    if usuario.id_usuario != current_id and usuario_actual.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
     
     data = request.get_json()
     
     if 'nombre' in data:
         usuario.nombre = data['nombre']
-    if 'apellido' in data:
-        usuario.apellido = data['apellido']
     if 'telefono' in data:
-        usuario.telefono = data['telefono']
-    if 'activo' in data:
-        if current_user.rol.nombre == 'administrador' or usuario.id == current_id:
-            usuario.activo = data['activo']
+        afiliado = Afiliado.query.filter_by(id_usuario=user_id).first()
+        if afiliado:
+            afiliado.telefono = data['telefono']
     
     db.session.commit()
     return jsonify(usuario.to_dict()), 200
@@ -204,355 +178,416 @@ def update_usuario(user_id):
 @jwt_required()
 def delete_usuario(user_id):
     current_id = int(get_jwt_identity())
-    current_user = db.session.get(Usuario, current_id)
+    usuario_actual = Usuario.query.get(current_id)
     
-    if not current_user:
-        return jsonify({'error': 'Usuario no encontrado'}), 404
-    
-    # Forzar carga del rol
-    rol = db.session.get(Rol, current_user.rol_id)
-    if not rol or rol.nombre != 'administrador':
+    if usuario_actual.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
     
-    usuario = db.session.get(Usuario, user_id)
-    if not usuario:
-        return jsonify({'error': 'Usuario no encontrado'}), 404
-    
-    # No permitir eliminarse a sí mismo
-    if usuario.id == current_id:
+    if usuario_actual.id_usuario == user_id:
         return jsonify({'error': 'No puedes eliminar tu propia cuenta'}), 400
     
-    from models import Cita, Disponibilidad, HistorialMedico, Reprogramacion
+    usuario = Usuario.query.get_or_404(user_id)
     
-    # Buscar y eliminar paciente asociado
-    paciente = Paciente.query.filter_by(usuario_id=user_id).first()
-    if paciente:
-        # Primero eliminar historial con cita_id
-        citas_paciente = Cita.query.filter_by(paciente_id=paciente.id).all()
-        for c in citas_paciente:
-            HistorialMedico.query.filter_by(cita_id=c.id).delete()
-            Reprogramacion.query.filter_by(cita_id=c.id).delete()
-        Cita.query.filter_by(paciente_id=paciente.id).delete()
-        Reprogramacion.query.filter_by(paciente_id=paciente.id).delete()
-        HistorialMedico.query.filter_by(paciente_id=paciente.id).delete()
-        db.session.delete(paciente)
+    afiliado = Afiliado.query.filter_by(id_usuario=user_id).first()
+    if afiliado:
+        Cita.query.filter_by(id_afiliado=afiliado.id_afiliado).delete()
+        Factura.query.filter_by(id_afiliado=afiliado.id_afiliado).delete()
+        HistorialClinico.query.filter_by(id_afiliado=afiliado.id_afiliado).delete()
+        db.session.delete(afiliado)
     
-    # Buscar y eliminar médico asociado
-    medico = Medico.query.filter_by(usuario_id=user_id).first()
-    if medico:
-        # Primero eliminar historial con cita_id
-        citas_medico = Cita.query.filter_by(medico_id=medico.id).all()
-        for c in citas_medico:
-            HistorialMedico.query.filter_by(cita_id=c.id).delete()
-            Reprogramacion.query.filter_by(cita_id=c.id).delete()
-        Reprogramacion.query.filter_by(medico_id=medico.id).delete()
-        Disponibilidad.query.filter_by(medico_id=medico.id).delete()
-        Cita.query.filter_by(medico_id=medico.id).delete()
-        HistorialMedico.query.filter_by(medico_id=medico.id).delete()
-        db.session.delete(medico)
+    profesional = Profesional.query.filter_by(id_usuario=user_id).first()
+    if profesional:
+        Cita.query.filter_by(id_profesional=profesional.id_profesional).delete()
+        HistorialClinico.query.filter_by(id_profesional=profesional.id_profesional).delete()
+        db.session.delete(profesional)
     
     db.session.delete(usuario)
     db.session.commit()
     
     return jsonify({'message': 'Usuario eliminado correctamente'}), 200
 
-# ============ PACIENTES ============
-
-@app.route('/api/pacientes', methods=['GET'])
+@app.route('/api/afiliados', methods=['GET'])
 @jwt_required()
-def get_pacientes():
+def get_afiliados():
     current_id = int(get_jwt_identity())
-    current_user = Usuario.query.get(current_id)
+    usuario = Usuario.query.get(current_id)
     
-    if current_user.rol.nombre == 'medico':
-        medico = Medico.query.filter_by(usuario_id=current_id).first()
-        if medico:
-            citas = Cita.query.filter_by(medico_id=medico.id).all()
-            paciente_ids = list(set(c.paciente_id for c in citas))
-            pacientes = Paciente.query.filter(Paciente.id.in_(paciente_ids)).all() if paciente_ids else []
-            return jsonify([p.to_dict() for p in pacientes]), 200
+    if usuario.rol == 'AFILIADO':
+        afiliado = Afiliado.query.filter_by(id_usuario=current_id).first()
+        if afiliado:
+            return jsonify([afiliado.to_dict()]), 200
     
-    pacientes = Paciente.query.all()
-    return jsonify([p.to_dict() for p in pacientes]), 200
+    afiliados = Afiliado.query.all()
+    return jsonify([a.to_dict() for a in afiliados]), 200
 
-@app.route('/api/pacientes/<int:paciente_id>', methods=['GET'])
+@app.route('/api/afiliados/<int:afiliado_id>', methods=['GET'])
 @jwt_required()
-def get_paciente(paciente_id):
-    paciente = Paciente.query.get_or_404(paciente_id)
-    return jsonify(paciente.to_dict()), 200
+def get_afiliado(afiliado_id):
+    afiliado = Afiliado.query.get_or_404(afiliado_id)
+    return jsonify(afiliado.to_dict()), 200
 
-# ============ MÉDICOS ============
-
-@app.route('/api/medicos', methods=['GET'])
+@app.route('/api/afiliados', methods=['POST'])
 @jwt_required()
-def get_medicos():
+def create_afiliado():
     current_id = int(get_jwt_identity())
-    current_user = Usuario.query.get(current_id)
+    usuario = Usuario.query.get(current_id)
     
-    # Administradores ven todos los médicos, otros solo activos
-    if current_user.rol.nombre == 'administrador':
-        medicos = Medico.query.all()
-    else:
-        medicos = Medico.query.filter_by(activo=True).all()
+    if usuario.rol != 'ADMIN':
+        return jsonify({'error': 'No autorizado'}), 403
     
-    return jsonify([m.to_dict() for m in medicos]), 200
+    data = request.get_json()
+    
+    required = ['email', 'password', 'nombre', 'documento']
+    for field in required:
+        if not data.get(field):
+            return jsonify({'error': f'Campo {field} requerido'}), 400
+    
+    if Usuario.query.filter_by(email=data['email']).first():
+        return jsonify({'error': 'Email ya registrado'}), 400
+    
+    hashed = bcrypt.generate_password_hash(data['password']).decode('utf-8')
+    nuevo_usuario = Usuario(
+        nombre=data['nombre'],
+        email=data['email'],
+        password=hashed,
+        rol='AFILIADO'
+    )
+    db.session.add(nuevo_usuario)
+    db.session.flush()
+    
+    afiliado = Afiliado(
+        id_usuario=nuevo_usuario.id_usuario,
+        documento=data['documento'],
+        fecha_nacimiento=datetime.strptime(data['fecha_nacimiento'], '%Y-%m-%d').date() if data.get('fecha_nacimiento') else None,
+        telefono=data.get('telefono', ''),
+        direccion=data.get('direccion', ''),
+        id_plan=data.get('id_plan')
+    )
+    db.session.add(afiliado)
+    db.session.commit()
+    
+    return jsonify(afiliado.to_dict()), 201
 
-@app.route('/api/medicos/<int:medico_id>', methods=['GET'])
+@app.route('/api/afiliados/<int:afiliado_id>', methods=['PUT'])
 @jwt_required()
-def get_medico(medico_id):
-    medico = Medico.query.get_or_404(medico_id)
-    return jsonify(medico.to_dict()), 200
-
-@app.route('/api/medicos/<int:medico_id>', methods=['PUT'])
-@jwt_required()
-def update_medico(medico_id):
+def update_afiliado(afiliado_id):
     current_id = int(get_jwt_identity())
-    current_user = Usuario.query.get(current_id)
-    medico = Medico.query.get_or_404(medico_id)
+    usuario = Usuario.query.get(current_id)
+    afiliado = Afiliado.query.get_or_404(afiliado_id)
     
-    # Solo el propio médico o un administrador puede modificar
-    if medico.usuario.id != current_id and current_user.rol.nombre != 'administrador':
+    if afiliado.id_usuario != current_id and usuario.rol != 'ADMIN':
+        return jsonify({'error': 'No autorizado'}), 403
+    
+    data = request.get_json()
+    
+    if 'documento' in data:
+        afiliado.documento = data['documento']
+    if 'fecha_nacimiento' in data:
+        afiliado.fecha_nacimiento = datetime.strptime(data['fecha_nacimiento'], '%Y-%m-%d').date()
+    if 'telefono' in data:
+        afiliado.telefono = data['telefono']
+    if 'direccion' in data:
+        afiliado.direccion = data['direccion']
+    if 'id_plan' in data:
+        afiliado.id_plan = data['id_plan']
+    
+    db.session.commit()
+    return jsonify(afiliado.to_dict()), 200
+
+@app.route('/api/profesionales', methods=['GET'])
+@jwt_required()
+def get_profesionales():
+    profesionales = Profesional.query.all()
+    return jsonify([p.to_dict() for p in profesionales]), 200
+
+@app.route('/api/profesionales/<int:profesional_id>', methods=['GET'])
+@jwt_required()
+def get_profesional(profesional_id):
+    profesional = Profesional.query.get_or_404(profesional_id)
+    return jsonify(profesional.to_dict()), 200
+
+@app.route('/api/profesionales', methods=['POST'])
+@jwt_required()
+def create_profesional():
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+    
+    if usuario.rol != 'ADMIN':
+        return jsonify({'error': 'No autorizado'}), 403
+    
+    data = request.get_json()
+    
+    required = ['email', 'password', 'nombre', 'especialidad']
+    for field in required:
+        if not data.get(field):
+            return jsonify({'error': f'Campo {field} requerido'}), 400
+    
+    if Usuario.query.filter_by(email=data['email']).first():
+        return jsonify({'error': 'Email ya registrado'}), 400
+    
+    hashed = bcrypt.generate_password_hash(data['password']).decode('utf-8')
+    nuevo_usuario = Usuario(
+        nombre=data['nombre'],
+        email=data['email'],
+        password=hashed,
+        rol='PROFESIONAL'
+    )
+    db.session.add(nuevo_usuario)
+    db.session.flush()
+    
+    profesional = Profesional(
+        id_usuario=nuevo_usuario.id_usuario,
+        especialidad=data['especialidad'],
+        id_centro=data.get('id_centro')
+    )
+    db.session.add(profesional)
+    db.session.commit()
+    
+    return jsonify(profesional.to_dict()), 201
+
+@app.route('/api/profesionales/<int:profesional_id>', methods=['PUT'])
+@jwt_required()
+def update_profesional(profesional_id):
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+    profesional = Profesional.query.get_or_404(profesional_id)
+    
+    if profesional.id_usuario != current_id and usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
     
     data = request.get_json()
     
     if 'especialidad' in data:
-        # Buscar la especialidad por nombre para obtener el nombre correcto
-        if 'especialidad_id' in data and data['especialidad_id']:
-            esp = Especialidad.query.get(data['especialidad_id'])
-            if esp:
-                medico.especialidad = esp.nombre
-            else:
-                medico.especialidad = data['especialidad']
-        else:
-            # Solo guardar el nombre
-            esp = Especialidad.query.filter_by(nombre=data['especialidad']).first()
-            if esp:
-                medico.especialidad = esp.nombre
-            else:
-                medico.especialidad = data['especialidad']
-    if 'cedula_profesional' in data:
-        medico.cedula_profesional = data['cedula_profesional']
-    if 'activo' in data:
-        # Solo administradores pueden cambiar el estado activo
-        if current_user.rol.nombre == 'administrador':
-            medico.activo = data['activo']
+        profesional.especialidad = data['especialidad']
+    if 'id_centro' in data:
+        profesional.id_centro = data['id_centro']
     
     db.session.commit()
-    return jsonify(medico.to_dict()), 200
+    return jsonify(profesional.to_dict()), 200
 
-@app.route('/api/medicos', methods=['POST'])
+@app.route('/api/disponibilidad/<int:profesional_id>', methods=['GET'])
 @jwt_required()
-def create_medico():
-    data = request.get_json()
-    
-    # Verificar que sea administrador
-    current_id = int(get_jwt_identity())
-    current_user = Usuario.query.get(current_id)
-    if current_user.rol.nombre != 'administrador':
-        return jsonify({'error': 'No autorizado'}), 403
-    
-    # Validar campos requeridos
-    required = ['email', 'password', 'nombre', 'apellido', 'telefono', 'cedula_profesional', 'especialidad_id']
-    for field in required:
-        if not data.get(field):
-            return jsonify({'error': f' Campo {field} requerido'}), 400
-    
-    # Validar email único
-    if Usuario.query.filter_by(email=data['email']).first():
-        return jsonify({'error': 'El email ya está registrado'}), 400
-    
-    # Validar cédula profesional única
-    if Medico.query.filter_by(cedula_profesional=data['cedula_profesional']).first():
-        return jsonify({'error': 'La cédula profesional ya está registrada'}), 400
-    
-    # Buscar o crear el rol de médico
-    rol_medico = Rol.query.filter_by(nombre='medico').first()
-    if not rol_medico:
-        return jsonify({'error': 'Rol de médico no encontrado'}), 400
-    
-    # Buscar el nombre de la especialidad
-    nombre_especialidad = ''
-    if 'especialidad_id' in data and data['especialidad_id']:
-        esp = Especialidad.query.get(data['especialidad_id'])
-        if esp:
-            nombre_especialidad = esp.nombre
-    elif 'especialidad' in data:
-        esp = Especialidad.query.filter_by(nombre=data['especialidad']).first()
-        if esp:
-            nombre_especialidad = esp.nombre
-        else:
-            nombre_especialidad = data['especialidad']
-    
-    # Crear el usuario del médico
-    hashed = bcrypt.generate_password_hash(data['password']).decode('utf-8')
-    nuevo_usuario = Usuario(
-        email=data['email'],
-        password=hashed,
-        nombre=data['nombre'],
-        apellido=data['apellido'],
-        telefono=data.get('telefono', ''),
-        rol_id=rol_medico.id,
+def get_disponibilidad_profesional(profesional_id):
+    disponibilidad = DisponibilidadProfesional.query.filter_by(
+        id_profesional=profesional_id,
         activo=True
-    )
-    db.session.add(nuevo_usuario)
-    db.session.flush()
-    
-    # Crear el registro de médico
-    nuevo_medico = Medico(
-        usuario_id=nuevo_usuario.id,
-        especialidad=nombre_especialidad,
-        cedula_profesional=data.get('cedula_profesional', ''),
-        activo=True
-    )
-    db.session.add(nuevo_medico)
-    db.session.flush()
-    
-    # Crear disponibilidad por defecto: Lun-Vier de 8am a 5pm
-    for dia in range(1, 6):  # Lunes a viernes (1-5)
-        disp = Disponibilidad(
-            medico_id=nuevo_medico.id,
-            dia_semana=dia,
-            hora_inicio=time(8, 0),
-            hora_fin=time(17, 0)
-        )
-        db.session.add(disp)
-    
-    db.session.commit()
-    
-    return jsonify(nuevo_medico.to_dict()), 201
-
-@app.route('/api/medicos/<int:medico_id>', methods=['DELETE'])
-@jwt_required()
-def delete_medico(medico_id):
-    current_id = int(get_jwt_identity())
-    current_user = db.session.get(Usuario, current_id)
-    
-    if current_user.rol.nombre != 'administrador':
-        return jsonify({'error': 'No autorizado'}), 403
-    
-    medico = db.session.get(Medico, medico_id)
-    if not medico:
-        return jsonify({'error': 'Médico no encontrado'}), 404
-    usuario_id = medico.usuario_id
-    
-    from models import Cita, Disponibilidad, HistorialMedico, Reprogramacion
-    
-    # Eliminar reprogramaciones
-    Reprogramacion.query.filter_by(medico_id=medico_id).delete()
-    # Eliminar disponibilidad
-    Disponibilidad.query.filter_by(medico_id=medico_id).delete()
-    # Eliminar citas
-    Cita.query.filter_by(medico_id=medico_id).delete()
-    # Eliminar historial
-    HistorialMedico.query.filter_by(medico_id=medico_id).delete()
-    
-    db.session.delete(medico)
-    
-    # Eliminar también el usuario del médico
-    usuario = db.session.get(Usuario, usuario_id)
-    if usuario:
-        db.session.delete(usuario)
-    
-    db.session.commit()
-    
-    return jsonify({'message': 'Médico eliminado correctamente'}), 200
-
-# ============ DISPONIBILIDAD ============
-
-@app.route('/api/disponibilidad/medico/<int:medico_id>', methods=['GET'])
-@jwt_required()
-def get_disponibilidad_medico(medico_id):
-    disponibilidad = Disponibilidad.query.filter_by(medico_id=medico_id, activo=True).all()
+    ).all()
     return jsonify([d.to_dict() for d in disponibilidad]), 200
 
-@app.route('/api/disponibilidad/medico/<int:medico_id>', methods=['POST'])
+@app.route('/api/disponibilidad', methods=['POST'])
 @jwt_required()
-def create_disponibilidad(medico_id):
+def create_disponibilidad():
     current_id = int(get_jwt_identity())
-    medico = Medico.query.get_or_404(medico_id)
-    
-    if medico.usuario_id != current_id:
+    usuario = Usuario.query.get(current_id)
+
+    if usuario.rol != 'ADMIN' and usuario.rol != 'PROFESIONAL':
         return jsonify({'error': 'No autorizado'}), 403
-    
+
     data = request.get_json()
-    
-    if 'dia_semana' not in data or 'hora_inicio' not in data or 'hora_fin' not in data:
-        return jsonify({'error': 'Campos requeridos: dia_semana, hora_inicio, hora_fin'}), 400
-    
-    if not validate_time(data['hora_inicio']) or not validate_time(data['hora_fin']):
-        return jsonify({'error': 'Horario debe estar entre 6:00 y 20:00'}), 400
-    
-    dia = int(data['dia_semana'])
-    if dia < 1 or dia > 7:
-        return jsonify({'error': 'Día debe ser 1-7 (Lunes-Domingo)'}), 400
-    
-    disp = Disponibilidad(
-        medico_id=medico_id,
-        dia_semana=dia,
-        hora_inicio=datetime.strptime(data['hora_inicio'], '%H:%M').time(),
-        hora_fin=datetime.strptime(data['hora_fin'], '%H:%M').time()
+
+    if not data.get('id_profesional') or not data.get('dia_semana') or not data.get('hora_inicio') or not data.get('hora_fin'):
+        return jsonify({'error': 'Todos los campos son requeridos'}), 400
+
+    disp = DisponibilidadProfesional(
+        id_profesional=data['id_profesional'],
+        dia_semana=data['dia_semana'],
+        hora_inicio=data['hora_inicio'],
+        hora_fin=data['hora_fin'],
+        activo=True
     )
     db.session.add(disp)
     db.session.commit()
-    
+
     return jsonify(disp.to_dict()), 201
 
-@app.route('/api/disponibilidad/<int:disp_id>', methods=['PUT'])
+@app.route('/api/disponibilidad/<int:disp_id>', methods=['DELETE'])
 @jwt_required()
-def update_disponibilidad(disp_id):
-    disponibilidad = Disponibilidad.query.get_or_404(disp_id)
+def delete_disponibilidad(disp_id):
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+
+    if usuario.rol != 'ADMIN' and usuario.rol != 'PROFESIONAL':
+        return jsonify({'error': 'No autorizado'}), 403
+
+    disp = DisponibilidadProfesional.query.get_or_404(disp_id)
+    disp.activo = False
+    db.session.commit()
+
+    return jsonify({'message': 'Disponibilidad eliminada'}), 200
+
+@app.route('/api/centros', methods=['GET'])
+@jwt_required()
+def get_centros():
+    centros = CentroSalud.query.all()
+    return jsonify([c.to_dict() for c in centros]), 200
+
+@app.route('/api/centros/<int:centro_id>', methods=['GET'])
+@jwt_required()
+def get_centro(centro_id):
+    centro = CentroSalud.query.get_or_404(centro_id)
+    return jsonify(centro.to_dict()), 200
+
+@app.route('/api/centros', methods=['POST'])
+@jwt_required()
+def create_centro():
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+    
+    if usuario.rol != 'ADMIN':
+        return jsonify({'error': 'No autorizado'}), 403
+    
     data = request.get_json()
     
-    if 'hora_inicio' in data:
-        disponibilidad.hora_inicio = datetime.strptime(data['hora_inicio'], '%H:%M').time()
-    if 'hora_fin' in data:
-        disponibilidad.hora_fin = datetime.strptime(data['hora_fin'], '%H:%M').time()
-    if 'activo' in data:
-        disponibilidad.activo = data['activo']
+    if not data.get('nombre'):
+        return jsonify({'error': 'Nombre requerido'}), 400
+    
+    centro = CentroSalud(
+        nombre=data['nombre'],
+        direccion=data.get('direccion', ''),
+        ciudad=data.get('ciudad', '')
+    )
+    db.session.add(centro)
+    db.session.commit()
+    
+    return jsonify(centro.to_dict()), 201
+
+@app.route('/api/centros/<int:centro_id>', methods=['PUT'])
+@jwt_required()
+def update_centro(centro_id):
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+    
+    if usuario.rol != 'ADMIN':
+        return jsonify({'error': 'No autorizado'}), 403
+    
+    centro = CentroSalud.query.get_or_404(centro_id)
+    data = request.get_json()
+    
+    if 'nombre' in data:
+        centro.nombre = data['nombre']
+    if 'direccion' in data:
+        centro.direccion = data['direccion']
+    if 'ciudad' in data:
+        centro.ciudad = data['ciudad']
     
     db.session.commit()
-    return jsonify(disponibilidad.to_dict()), 200
+    return jsonify(centro.to_dict()), 200
 
-# ============ CITAS ============
+@app.route('/api/centros/<int:centro_id>', methods=['DELETE'])
+@jwt_required()
+def delete_centro(centro_id):
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+    
+    if usuario.rol != 'ADMIN':
+        return jsonify({'error': 'No autorizado'}), 403
+    
+    centro = CentroSalud.query.get_or_404(centro_id)
+    db.session.delete(centro)
+    db.session.commit()
+    return jsonify({'message': 'Centro eliminado'}), 200
+
+@app.route('/api/planes', methods=['GET'])
+@jwt_required()
+def get_planes():
+    planes = Plan.query.all()
+    return jsonify([p.to_dict() for p in planes]), 200
+
+@app.route('/api/planes/<int:plan_id>', methods=['GET'])
+@jwt_required()
+def get_plan(plan_id):
+    plan = Plan.query.get_or_404(plan_id)
+    return jsonify(plan.to_dict()), 200
+
+@app.route('/api/planes', methods=['POST'])
+@jwt_required()
+def create_plan():
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+    
+    if usuario.rol != 'ADMIN':
+        return jsonify({'error': 'No autorizado'}), 403
+    
+    data = request.get_json()
+    
+    if not data.get('nombre'):
+        return jsonify({'error': 'Nombre requerido'}), 400
+    
+    plan = Plan(
+        nombre=data['nombre'],
+        descripcion=data.get('descripcion', ''),
+        costo=data.get('costo', 0)
+    )
+    db.session.add(plan)
+    db.session.commit()
+    
+    return jsonify(plan.to_dict()), 201
+
+@app.route('/api/planes/<int:plan_id>', methods=['PUT'])
+@jwt_required()
+def update_plan(plan_id):
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+    
+    if usuario.rol != 'ADMIN':
+        return jsonify({'error': 'No autorizado'}), 403
+    
+    plan = Plan.query.get_or_404(plan_id)
+    data = request.get_json()
+    
+    if data.get('nombre'):
+        plan.nombre = data['nombre']
+    if 'descripcion' in data:
+        plan.descripcion = data['descripcion']
+    if data.get('costo') is not None:
+        plan.costo = data['costo']
+    
+    db.session.commit()
+    return jsonify(plan.to_dict()), 200
+
+@app.route('/api/planes/<int:plan_id>', methods=['DELETE'])
+@jwt_required()
+def delete_plan(plan_id):
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+    
+    if usuario.rol != 'ADMIN':
+        return jsonify({'error': 'No autorizado'}), 403
+    
+    plan = Plan.query.get_or_404(plan_id)
+    db.session.delete(plan)
+    db.session.commit()
+    return jsonify({'message': 'Plan eliminado'}), 200
 
 @app.route('/api/citas', methods=['GET'])
 @jwt_required()
 def get_citas():
     current_id = int(get_jwt_identity())
-    current_user = Usuario.query.get(current_id)
-    
-    paciente_id = request.args.get('paciente_id')
-    medico_id = request.args.get('medico_id')
-    fecha = request.args.get('fecha')
-    estado = request.args.get('estado')
+    usuario = Usuario.query.get(current_id)
     
     query = Cita.query
     
-    # Si es paciente, solo mostrar sus citas
-    if current_user.rol.nombre == 'paciente':
-        paciente = Paciente.query.filter_by(usuario_id=current_id).first()
-        if paciente:
-            query = query.filter_by(paciente_id=paciente.id)
-    # Si es médico, solo mostrar sus citas
-    elif current_user.rol.nombre == 'medico':
-        medico = Medico.query.filter_by(usuario_id=current_id).first()
-        if medico:
-            query = query.filter_by(medico_id=medico.id)
-    # Administrador puede filtrar por parámetros específicos
-    else:
-        if paciente_id:
-            query = query.filter_by(paciente_id=paciente_id)
-        if medico_id:
-            query = query.filter_by(medico_id=medico_id)
+    if usuario.rol == 'AFILIADO':
+        afiliado = Afiliado.query.filter_by(id_usuario=current_id).first()
+        if afiliado:
+            query = query.filter_by(id_afiliado=afiliado.id_afiliado)
+    elif usuario.rol == 'PROFESIONAL':
+        profesional = Profesional.query.filter_by(id_usuario=current_id).first()
+        if profesional:
+            query = query.filter_by(id_profesional=profesional.id_profesional)
     
-    if fecha:
-        query = query.filter_by(fecha=datetime.strptime(fecha, '%Y-%m-%d').date())
+    estado = request.args.get('estado')
     if estado:
         query = query.filter_by(estado=estado)
     
-    citas = query.order_by(Cita.fecha, Cita.hora).all()
+    citas = query.order_by(Cita.fecha.desc()).all()
     return jsonify([c.to_dict() for c in citas]), 200
+
+@app.route('/api/citas/<int:cita_id>', methods=['GET'])
+@jwt_required()
+def get_cita(cita_id):
+    cita = Cita.query.get_or_404(cita_id)
+    return jsonify(cita.to_dict()), 200
 
 @app.route('/api/citas', methods=['POST'])
 @jwt_required()
@@ -560,78 +595,39 @@ def create_cita():
     current_id = int(get_jwt_identity())
     usuario = Usuario.query.get(current_id)
     
-    if usuario.rol.nombre != 'paciente':
-        return jsonify({'error': 'Solo pacientes pueden crear citas'}), 403
+    if usuario.rol != 'AFILIADO':
+        return jsonify({'error': 'Solo afiliados pueden agendar citas'}), 403
     
-    paciente = Paciente.query.filter_by(usuario_id=current_id).first()
-    if not paciente:
-        return jsonify({'error': 'Paciente no encontrado'}), 404
+    afiliado = Afiliado.query.filter_by(id_usuario=current_id).first()
+    if not afiliado:
+        return jsonify({'error': 'Afiliado no encontrado'}), 404
     
     data = request.get_json()
     
-    required = ['medico_id', 'fecha', 'hora', 'tipo_consulta']
+    required = ['id_profesional', 'id_centro', 'fecha']
     for field in required:
         if field not in data:
             return jsonify({'error': f'Campo {field} requerido'}), 400
     
     try:
-        fecha_cita = datetime.strptime(data['fecha'], '%Y-%m-%d').date()
-        hora_cita = datetime.strptime(data['hora'], '%H:%M').time()
+        fecha_cita = datetime.strptime(data['fecha'], '%Y-%m-%d %H:%M')
     except:
-        return jsonify({'error': 'Formato de fecha u hora inválido'}), 400
+        return jsonify({'error': 'Formato de fecha inválido'}), 400
     
-    if fecha_cita < date.today():
+    if fecha_cita < datetime.now():
         return jsonify({'error': 'No se pueden agendar citas en fechas pasadas'}), 400
     
-    # Si es hoy, validar que la hora no haya pasado
-    if fecha_cita == date.today() and hora_cita <= datetime.now().time():
-        return jsonify({'error': 'No se pueden agendar citas para una hora que ya pasó'}), 400
-    
-    dia_semana = fecha_cita.isoweekday()
-    if dia_semana > 7:
-        return jsonify({'error': 'Solo se pueden agendar citas de lunes a domingo'}), 400
-    
-    disponibilidad = Disponibilidad.query.filter_by(
-        medico_id=data['medico_id'],
-        dia_semana=dia_semana,
-        activo=True
-    ).first()
-    
-    if not disponibilidad:
-        return jsonify({'error': 'El médico no tiene disponibilidad para este día. Por favor seleccione otro día.'}), 400
-    
-    if hora_cita < disponibilidad.hora_inicio or hora_cita > disponibilidad.hora_fin:
-        return jsonify({'error': 'El médico no atiende en este horario. Horario disponible: ' + str(disponibilidad.hora_inicio) + ' a ' + str(disponibilidad.hora_fin)}), 400
-    
-    # Verificar citas existentes (pendiente o confirmada)
-    cita_existente = Cita.query.filter(
-        Cita.medico_id == data['medico_id'],
-        Cita.fecha == fecha_cita,
-        Cita.hora == hora_cita,
-        Cita.estado.in_(['pendiente', 'confirmada'])
-    ).first()
-    
-    if cita_existente:
-        return jsonify({'error': 'Ya existe una cita agendada en este horario. Por favor seleccione otra hora.'}), 400
-    
     cita = Cita(
-        paciente_id=paciente.id,
-        medico_id=data['medico_id'],
+        id_afiliado=afiliado.id_afiliado,
+        id_profesional=data['id_profesional'],
+        id_centro=data['id_centro'],
         fecha=fecha_cita,
-        hora=hora_cita,
-        tipo_consulta=data['tipo_consulta'],
-        estado='pendiente'
+        estado='PENDIENTE'
     )
     db.session.add(cita)
     db.session.commit()
     
     return jsonify(cita.to_dict()), 201
-
-@app.route('/api/citas/<int:cita_id>', methods=['GET'])
-@jwt_required()
-def get_cita(cita_id):
-    cita = Cita.query.get_or_404(cita_id)
-    return jsonify(cita.to_dict()), 200
 
 @app.route('/api/citas/<int:cita_id>', methods=['PUT'])
 @jwt_required()
@@ -642,32 +638,23 @@ def update_cita(cita_id):
     
     data = request.get_json()
     
-    # Administrador puede modificar cualquier campo
-    if usuario.rol.nombre == 'administrador':
+    if usuario.rol == 'ADMIN':
         if 'estado' in data:
             cita.estado = data['estado']
-        if 'observaciones' in data:
-            cita.observaciones = data['observaciones']
         if 'fecha' in data:
-            cita.fecha = datetime.strptime(data['fecha'], '%Y-%m-%d').date()
-        if 'hora' in data:
-            cita.hora = datetime.strptime(data['hora'], '%H:%M').time()
-    elif usuario.rol.nombre == 'paciente':
-        paciente = Paciente.query.filter_by(usuario_id=current_id).first()
-        if cita.paciente_id != paciente.id:
+            cita.fecha = datetime.strptime(data['fecha'], '%Y-%m-%d %H:%M')
+    elif usuario.rol == 'AFILIADO':
+        afiliado = Afiliado.query.filter_by(id_usuario=current_id).first()
+        if cita.id_afiliado != afiliado.id_afiliado:
             return jsonify({'error': 'No autorizado'}), 403
-        
-        if 'estado' in data and data['estado'] in ['cancelada']:
+        if 'estado' in data and data['estado'] in ['CANCELADA']:
             cita.estado = data['estado']
-    elif usuario.rol.nombre == 'medico':
-        medico = Medico.query.filter_by(usuario_id=current_id).first()
-        if cita.medico_id != medico.id:
+    elif usuario.rol == 'PROFESIONAL':
+        profesional = Profesional.query.filter_by(id_usuario=current_id).first()
+        if cita.id_profesional != profesional.id_profesional:
             return jsonify({'error': 'No autorizado'}), 403
-        
         if 'estado' in data:
             cita.estado = data['estado']
-        if 'observaciones' in data:
-            cita.observaciones = data['observaciones']
     
     db.session.commit()
     return jsonify(cita.to_dict()), 200
@@ -676,173 +663,142 @@ def update_cita(cita_id):
 @jwt_required()
 def delete_cita(cita_id):
     current_id = int(get_jwt_identity())
-    usuario = db.session.get(Usuario, current_id)
-    cita = db.session.get(Cita, cita_id)
+    usuario = Usuario.query.get(current_id)
+    cita = Cita.query.get_or_404(cita_id)
     
-    if not cita:
-        return jsonify({'error': 'Cita no encontrada'}), 404
-    
-    paciente = Paciente.query.filter_by(usuario_id=current_id).first()
-    
-    if usuario.rol.nombre == 'paciente':
-        if cita.paciente_id != paciente.id:
+    if usuario.rol == 'AFILIADO':
+        afiliado = Afiliado.query.filter_by(id_usuario=current_id).first()
+        if cita.id_afiliado != afiliado.id_afiliado:
             return jsonify({'error': 'No autorizado'}), 403
-    elif usuario.rol.nombre != 'administrador':
+    elif usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
     
-    from models import Reprogramacion
-    # Eliminar reprogramaciones asociadas a la cita
-    Reprogramacion.query.filter_by(cita_id=cita_id).delete()
-    
-    cita.estado = 'cancelada'
+    cita.estado = 'CANCELADA'
     db.session.commit()
     
     return jsonify({'message': 'Cita cancelada'}), 200
 
-# ============ REPROGRAMACIÓN ============
-
-@app.route('/api/reprogramaciones', methods=['GET'])
+@app.route('/api/facturas', methods=['GET'])
 @jwt_required()
-def get_reprogramaciones():
+def get_facturas():
     current_id = int(get_jwt_identity())
     usuario = Usuario.query.get(current_id)
     
-    if usuario.rol.nombre == 'paciente':
-        paciente = Paciente.query.filter_by(usuario_id=current_id).first()
-        if not paciente:
-            return jsonify({'error': 'Paciente no encontrado'}), 404
-        reprogramaciones = Reprogramacion.query.filter_by(paciente_id=paciente.id).order_by(Reprogramacion.created_at.desc()).all()
-    elif usuario.rol.nombre == 'medico':
-        medico = Medico.query.filter_by(usuario_id=current_id).first()
-        if not medico:
-            return jsonify({'error': 'Médico no encontrado'}), 404
-        reprogramaciones = Reprogramacion.query.filter_by(medico_id=medico.id).order_by(Reprogramacion.created_at.desc()).all()
-    elif usuario.rol.nombre == 'administrador':
-        reprogramaciones = Reprogramacion.query.order_by(Reprogramacion.created_at.desc()).all()
-    else:
+    query = Factura.query
+    
+    if usuario.rol == 'AFILIADO':
+        afiliado = Afiliado.query.filter_by(id_usuario=current_id).first()
+        if afiliado:
+            query = query.filter_by(id_afiliado=afiliado.id_afiliado)
+    
+    estado = request.args.get('estado')
+    if estado:
+        query = query.filter_by(estado=estado)
+    
+    facturas = query.order_by(Factura.fecha.desc()).all()
+    return jsonify([f.to_dict() for f in facturas]), 200
+
+@app.route('/api/facturas/<int:factura_id>', methods=['GET'])
+@jwt_required()
+def get_factura(factura_id):
+    factura = Factura.query.get_or_404(factura_id)
+    return jsonify(factura.to_dict()), 200
+
+@app.route('/api/facturas', methods=['POST'])
+@jwt_required()
+def create_factura():
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+    
+    if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
-    
-    return jsonify([r.to_dict() for r in reprogramaciones]), 200
-
-@app.route('/api/reprogramaciones', methods=['POST'])
-@jwt_required()
-def create_reprogramacion():
-    current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
-    paciente = Paciente.query.filter_by(usuario_id=current_id).first()
-    
-    if not paciente:
-        return jsonify({'error': 'Paciente no encontrado'}), 404
     
     data = request.get_json()
     
-    required = ['cita_id', 'nueva_fecha', 'nueva_hora']
-    for field in required:
-        if field not in data:
-            return jsonify({'error': f'Campo {field} requerido'}), 400
+    if not data.get('id_afiliado') or not data.get('total'):
+        return jsonify({'error': 'Campos requeridos'}), 400
     
-    cita = Cita.query.get(data['cita_id'])
-    if not cita:
-        return jsonify({'error': 'Cita no encontrada'}), 404
-    
-    if cita.paciente_id != paciente.id:
-        return jsonify({'error': 'No autorizado'}), 403
-    
-    if cita.estado not in ['pendiente', 'confirmada']:
-        return jsonify({'error': 'No se puede reprogramar esta cita'}), 400
-    
-    nueva_fecha = datetime.strptime(data['nueva_fecha'], '%Y-%m-%d').date()
-    nueva_hora = datetime.strptime(data['nueva_hora'], '%H:%M').time()
-    
-    # Validar que la nueva fecha no sea pasada
-    if nueva_fecha < date.today():
-        return jsonify({'error': 'No se puede reprogramar para una fecha pasada'}), 400
-    
-    # Si es la misma fecha, validar que la hora no sea pasada
-    if nueva_fecha == date.today() and nueva_hora <= datetime.now().time():
-        return jsonify({'error': 'No se puede reprogramar para una hora que ya pasó'}), 400
-    
-    disponibilidad = Disponibilidad.query.filter_by(
-        medico_id=cita.medico_id, 
-        dia_semana=nueva_fecha.isoweekday(), 
-        activo=True
-    ).first()
-    if not disponibilidad:
-        return jsonify({'error': 'El médico no tiene disponibilidad en ese día'}), 400
-    
-    hora_inicio = disponibilidad.hora_inicio
-    hora_fin = disponibilidad.hora_fin
-    if not (hora_inicio <= nueva_hora <= hora_fin):
-        return jsonify({'error': 'La hora no está dentro del horario de disponibilidad'}), 400
-    
-    existing = Cita.query.filter(
-        Cita.medico_id == cita.medico_id,
-        Cita.fecha == nueva_fecha,
-        Cita.hora == nueva_hora,
-        Cita.estado.in_(['pendiente', 'confirmada'])
-    ).first()
-    if existing:
-        return jsonify({'error': 'Ya existe una cita en ese horario'}), 400
-    
-    reprogramacion = Reprogramacion(
-        cita_id=cita.id,
-        paciente_id=paciente.id,
-        medico_id=cita.medico_id,
-        fecha_original=cita.fecha,
-        hora_original=cita.hora,
-        nueva_fecha=nueva_fecha,
-        nueva_hora=nueva_hora,
-        motivo=data.get('motivo', ''),
-        estado='pendiente'
+    factura = Factura(
+        id_afiliado=data['id_afiliado'],
+        fecha=datetime.now().date(),
+        total=data['total'],
+        estado='PENDIENTE'
     )
-    db.session.add(reprogramacion)
+    db.session.add(factura)
     db.session.commit()
     
-    return jsonify(reprogramacion.to_dict()), 201
+    return jsonify(factura.to_dict()), 201
 
-@app.route('/api/reprogramaciones/<int:reprogramacion_id>', methods=['PUT'])
+@app.route('/api/facturas/<int:factura_id>', methods=['DELETE'])
 @jwt_required()
-def update_reprogramacion(reprogramacion_id):
+def delete_factura(factura_id):
     current_id = int(get_jwt_identity())
     usuario = Usuario.query.get(current_id)
     
-    if usuario.rol.nombre != 'medico':
-        return jsonify({'error': 'Solo médicos pueden aprobar/rechazar reprogramaciones'}), 403
+    if usuario.rol != 'ADMIN':
+        return jsonify({'error': 'No autorizado'}), 403
     
-    medico = Medico.query.filter_by(usuario_id=current_id).first()
-    if not medico:
-        return jsonify({'error': 'Médico no encontrado'}), 404
+    factura = Factura.query.get_or_404(factura_id)
+    db.session.delete(factura)
+    db.session.commit()
     
-    reprogramacion = Reprogramacion.query.get_or_404(reprogramacion_id)
+    return jsonify({'message': 'Factura eliminada'}), 200
+
+@app.route('/api/facturas/<int:factura_id>/pagar', methods=['POST'])
+@jwt_required()
+def pagar_factura(factura_id):
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+    factura = Factura.query.get_or_404(factura_id)
     
-    if reprogramacion.medico_id != medico.id:
+    if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
     
     data = request.get_json()
-    nuevo_estado = data.get('estado')
     
-    if nuevo_estado not in ['aprobada', 'rechazada']:
-        return jsonify({'error': 'Estado inválido'}), 400
-    
-    reprogramacion.estado = nuevo_estado
-    
-    if nuevo_estado == 'aprobada':
-        cita = Cita.query.get(reprogramacion.cita_id)
-        if cita:
-            cita.fecha = reprogramacion.nueva_fecha
-            cita.hora = reprogramacion.nueva_hora
-    
+    pago = Pago(
+        id_factura=factura_id,
+        fecha=datetime.now().date(),
+        monto=factura.total,
+        metodo_pago=data.get('metodo_pago', 'Efectivo')
+    )
+    db.session.add(pago)
+    factura.estado = 'PAGADA'
     db.session.commit()
     
-    return jsonify(reprogramacion.to_dict()), 200
+    return jsonify(factura.to_dict()), 200
 
-# ============ HISTORIAL MÉDICO ============
-
-@app.route('/api/historial/paciente/<int:paciente_id>', methods=['GET'])
+@app.route('/api/pagos', methods=['GET'])
 @jwt_required()
-def get_historial_paciente(paciente_id):
-    historial = HistorialMedico.query.filter_by(paciente_id=paciente_id).order_by(HistorialMedico.fecha_registro.desc()).all()
-    return jsonify([h.to_dict() for h in historial]), 200
+def get_pagos():
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+    
+    if usuario.rol != 'ADMIN':
+        return jsonify({'error': 'No autorizado'}), 403
+    
+    pagos = Pago.query.all()
+    return jsonify([p.to_dict() for p in pagos]), 200
+
+@app.route('/api/historial', methods=['GET'])
+@jwt_required()
+def get_historial():
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+    
+    query = HistorialClinico.query
+    
+    if usuario.rol == 'AFILIADO':
+        afiliado = Afiliado.query.filter_by(id_usuario=current_id).first()
+        if afiliado:
+            query = query.filter_by(id_afiliado=afiliado.id_afiliado)
+    elif usuario.rol == 'PROFESIONAL':
+        profesional = Profesional.query.filter_by(id_usuario=current_id).first()
+        if profesional:
+            query = query.filter_by(id_profesional=profesional.id_profesional)
+    
+    historiales = query.order_by(HistorialClinico.fecha.desc()).all()
+    return jsonify([h.to_dict() for h in historiales]), 200
 
 @app.route('/api/historial', methods=['POST'])
 @jwt_required()
@@ -850,345 +806,158 @@ def create_historial():
     current_id = int(get_jwt_identity())
     usuario = Usuario.query.get(current_id)
     
-    # Obtener el rol directamente
-    rol = Rol.query.get(usuario.rol_id)
-    if not rol or rol.nombre != 'medico':
-        return jsonify({'error': 'Solo médicos pueden registrar historial'}), 403
+    if usuario.rol != 'PROFESIONAL':
+        return jsonify({'error': 'Solo profesionales pueden registrar historial'}), 403
+    
+    profesional = Profesional.query.filter_by(id_usuario=current_id).first()
+    if not profesional:
+        return jsonify({'error': 'Profesional no encontrado'}), 404
     
     data = request.get_json()
     
-    required = ['paciente_id', 'diagnostico']
-    for field in required:
-        if field not in data:
-            return jsonify({'error': f'Campo {field} requerido'}), 400
+    if not data.get('id_afiliado') or not data.get('diagnostico'):
+        return jsonify({'error': 'Campos requeridos'}), 400
     
-    # Obtener el médico actual
-    medico = Medico.query.filter_by(usuario_id=current_id).first()
-    if not medico:
-        return jsonify({'error': 'Médico no encontrado'}), 404
-    
-    historial = HistorialMedico(
-        paciente_id=data['paciente_id'],
-        medico_id=medico.id,
-        cita_id=data.get('cita_id'),
+    historial = HistorialClinico(
+        id_afiliado=data['id_afiliado'],
+        id_profesional=profesional.id_profesional,
+        fecha=datetime.now().date(),
         diagnostico=data['diagnostico'],
-        tratamiento=data.get('tratamiento', ''),
-        observaciones=data.get('observaciones', '')
+        tratamiento=data.get('tratamiento', '')
     )
     db.session.add(historial)
     
-    # Si se proporciona cita_id, marcar la cita como completada
-    if data.get('cita_id'):
-        cita = Cita.query.get(data['cita_id'])
+    if data.get('id_cita'):
+        cita = Cita.query.get(data['id_cita'])
         if cita:
-            cita.estado = 'completada'
+            cita.estado = 'FINALIZADA'
     
     db.session.commit()
     
     return jsonify(historial.to_dict()), 201
 
-# ============ INICIALIZAR BASE DE DATOS ============
-
-@app.route('/api/init', methods=['POST'])
-def init_db():
-    try:
-        db.create_all()
-        
-        # Migración: agregar columna cedula si no existe (solo si la tabla ya existe)
-        try:
-            db.session.execute(db.text("ALTER TABLE pacientes ADD COLUMN cedula VARCHAR(20)"))
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-        
-        # Crear tablas si no existen
-        db.create_all()
-        
-        rol_paciente = Rol.query.filter_by(nombre='paciente').first()
-        rol_medico = Rol.query.filter_by(nombre='medico').first()
-        rol_admin = Rol.query.filter_by(nombre='administrador').first()
-        
-        if not rol_paciente:
-            rol_paciente = Rol(nombre='paciente', descripcion='Usuario que solicita citas médicas')
-            db.session.add(rol_paciente)
-        
-        if not rol_medico:
-            rol_medico = Rol(nombre='medico', descripcion='Profesional de la salud que atiende citas')
-            db.session.add(rol_medico)
-        
-        if not rol_admin:
-            rol_admin = Rol(nombre='administrador', descripcion='Usuario que gestiona el sistema')
-            db.session.add(rol_admin)
-        
-        db.session.commit()
-        
-        admin_exists = Usuario.query.filter_by(email='admin@hospital.com').first()
-        if not admin_exists:
-            hashed = bcrypt.generate_password_hash('admin123').decode('utf-8')
-            admin = Usuario(
-                email='admin@hospital.com',
-                password=hashed,
-                nombre='Admin',
-                apellido='Sistema',
-                telefono='3000000000',
-                rol_id=rol_admin.id
-            )
-            db.session.add(admin)
-        
-        # Crear paciente de prueba
-        paciente_exists = Usuario.query.filter_by(email='paciente@test.com').first()
-        if not paciente_exists:
-            hashed_paciente = bcrypt.generate_password_hash('paciente123').decode('utf-8')
-            usuario_paciente = Usuario(
-                email='paciente@test.com',
-                password=hashed_paciente,
-                nombre='Juan',
-                apellido='Pérez',
-                telefono='3001234567',
-                rol_id=rol_paciente.id
-            )
-            db.session.add(usuario_paciente)
-            db.session.flush()
-            
-            paciente = Paciente(
-                usuario_id=usuario_paciente.id,
-                fecha_nacimiento=date(1990, 5, 15),
-                direccion='Calle 123, Ciudad'
-            )
-            db.session.add(paciente)
-        
-        # Crear médico de prueba
-        medico_exists = Usuario.query.filter_by(email='medico@test.com').first()
-        if not medico_exists:
-            hashed_medico = bcrypt.generate_password_hash('medico123').decode('utf-8')
-            usuario_medico = Usuario(
-                email='medico@test.com',
-                password=hashed_medico,
-                nombre='María',
-                apellido='García',
-                telefono='3009876543',
-                rol_id=rol_medico.id
-            )
-            db.session.add(usuario_medico)
-            db.session.flush()
-            
-            medico = Medico(
-                usuario_id=usuario_medico.id,
-                especialidad='Medicina General',
-                cedula_profesional='MD-12345'
-            )
-            db.session.add(medico)
-            db.session.flush()
-            
-            # Disponibilidad del médico (Lun-Dom 8am-5pm)
-            for dia in range(1, 8):
-                disp = Disponibilidad(
-                    medico_id=medico.id,
-                    dia_semana=dia,
-                    hora_inicio=time(8, 0),
-                    hora_fin=time(17, 0)
-                )
-                db.session.add(disp)
-        
-        # Crear segundo médico
-        medico2_exists = Usuario.query.filter_by(email='medico2@test.com').first()
-        if not medico2_exists:
-            hashed_medico2 = bcrypt.generate_password_hash('medico123').decode('utf-8')
-            usuario_medico2 = Usuario(
-                email='medico2@test.com',
-                password=hashed_medico2,
-                nombre='Carlos',
-                apellido='López',
-                telefono='3008765432',
-                rol_id=rol_medico.id
-)
-            db.session.add(usuario_medico2)
-            db.session.flush()
-            
-            medico2 = Medico(
-                usuario_id=usuario_medico2.id,
-                especialidad='Cardiología',
-                cedula_profesional='MD-67890'
-            )
-            db.session.add(medico2)
-            db.session.flush()
-        
-        # Crear estados por defecto
-        estados_default = [
-            {'nombre': 'activo', 'descripcion': 'Usuario activo en el sistema', 'color': '#10B981'},
-            {'nombre': 'inactivo', 'descripcion': 'Usuario inactivo en el sistema', 'color': '#EF4444'},
-            {'nombre': 'pendiente', 'descripcion': 'Cita awaiting confirmation', 'color': '#F59E0B'},
-            {'nombre': 'confirmada', 'descripcion': 'Cita confirmada por el médico', 'color': '#10B981'},
-            {'nombre': 'cancelada', 'descripcion': 'Cita cancelada por el paciente o médico', 'color': '#EF4444'},
-            {'nombre': 'completada', 'descripcion': 'Cita atendidos exitosamente', 'color': '#3B82F6'},
-        ]
-        
-        for e in estados_default:
-            est_existe = Estado.query.filter_by(nombre=e['nombre']).first()
-            if not est_existe:
-                nuevo_est = Estado(nombre=e['nombre'], descripcion=e['descripcion'], color=e['color'])
-                db.session.add(nuevo_est)
-        
-        # Crear especialidades con descripcion
-        especialidades_default = [
-            {'nombre': 'Medicina General', 'descripcion': 'Atención primaria de salud, consulta general'},
-            {'nombre': 'Medicina Interna', 'descripcion': 'Enfermedades adultas no quirúrgicas'},
-            {'nombre': 'Pediatría', 'descripcion': 'Atención médica para niños y adolescentes'},
-            {'nombre': 'Ginecología', 'descripcion': 'Salud de la mujer y sistema reproductor'},
-            {'nombre': 'Cardiología', 'descripcion': 'Enfermedades del corazón y sistema circulatorio'},
-            {'nombre': 'Dermatología', 'descripcion': 'Enfermedades de la piel'},
-            {'nombre': 'Oftalmología', 'descripcion': 'Enfermedades de los ojos'},
-            {'nombre': 'Ortopedia', 'descripcion': 'Enfermedades de los huesos y músculos'},
-            {'nombre': 'Neurología', 'descripcion': 'Enfermedades del sistema nervioso'},
-            {'nombre': 'Psicología', 'descripcion': 'Salud mental y comportamiento'},
-        ]
-        
-        for esp in especialidades_default:
-            esp_existe = Especialidad.query.filter_by(nombre=esp['nombre']).first()
-            if not esp_existe:
-                nueva_esp = Especialidad(nombre=esp['nombre'], descripcion=esp['descripcion'], activo=True)
-                db.session.add(nueva_esp)
-        
-        # Crear citas de ejemplo
-        from datetime import datetime, timedelta
-        paciente = Paciente.query.first()
-        medico = Medico.query.first()
-        medico2 = Medico.query.filter(Medico.especialidad == 'Cardiología').first()
-        
-        if paciente and medico:
-            # Citas para hoy
-            fecha_hoy = date.today()
-            citas_ejemplo = [
-                {'paciente': paciente.id, 'medico': medico.id, 'fecha': fecha_hoy, 'hora': time(9, 0), 'tipo': 'Medicina General', 'estado': 'confirmada'},
-                {'paciente': paciente.id, 'medico': medico.id, 'fecha': fecha_hoy, 'hora': time(10, 30), 'tipo': 'Medicina General', 'estado': 'pendiente'},
-                {'paciente': paciente.id, 'medico': medico.id, 'fecha': fecha_hoy, 'hora': time(14, 0), 'tipo': 'Medicina General', 'estado': 'pendiente'},
-            ]
-            if medico2:
-                citas_ejemplo.append({'paciente': paciente.id, 'medico': medico2.id, 'fecha': fecha_hoy, 'hora': time(11, 0), 'tipo': 'Cardiología', 'estado': 'confirmada'})
-            
-            for c in citas_ejemplo:
-                cita_existe = Cita.query.filter_by(paciente_id=c['paciente'], medico_id=c['medico'], fecha=c['fecha'], hora=c['hora']).first()
-                if not cita_existe:
-                    nueva_cita = Cita(
-                        paciente_id=c['paciente'],
-                        medico_id=c['medico'],
-                        fecha=c['fecha'],
-                        hora=c['hora'],
-                        tipo_consulta=c['tipo'],
-                        estado=c['estado']
-                    )
-                    db.session.add(nueva_cita)
-        
-        db.session.commit()
-        
-        return jsonify({'message': 'Base de datos inicializada correctamente con usuarios de prueba'}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# ============ ESTADOS ============
-
-@app.route('/api/estados', methods=['GET'])
+@app.route('/api/consultas/afiliados-facturas-pendientes', methods=['GET'])
 @jwt_required()
-def get_estados():
-    estados = Estado.query.all()
-    return jsonify([e.to_dict() for e in estados]), 200
-
-@app.route('/api/estados', methods=['POST'])
-@jwt_required()
-def create_estado():
+def get_afiliados_facturas_pendientes():
     current_id = int(get_jwt_identity())
-    current_user = Usuario.query.get(current_id)
+    usuario = Usuario.query.get(current_id)
     
-    if current_user.rol.nombre != 'administrador':
+    if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
     
-    data = request.get_json()
+    resultados = db.session.execute(
+        db.text('''
+            SELECT a.id_afiliado, u.nombre, u.email, COUNT(f.id_factura) as facturas_pendientes, SUM(f.total) as total_pendiente
+            FROM afiliados a
+            JOIN usuarios u ON a.id_usuario = u.id_usuario
+            LEFT JOIN facturas f ON a.id_afiliado = f.id_afiliado AND f.estado = 'PENDIENTE'
+            GROUP BY a.id_afiliado, u.nombre, u.email
+            HAVING COUNT(f.id_factura) > 0
+        ''')
+    ).fetchall()
     
-    if 'nombre' not in data:
-        return jsonify({'error': 'El nombre es requerido'}), 400
-    
-    nuevo = Estado(
-        nombre=data['nombre'],
-        descripcion=data.get('descripcion', ''),
-        color=data.get('color', '#64748B')
-    )
-    db.session.add(nuevo)
-    db.session.commit()
-    
-    return jsonify(nuevo.to_dict()), 201
+    return jsonify([{
+        'id_afiliado': r[0],
+        'nombre': r[1],
+        'email': r[2],
+        'facturas_pendientes': r[3],
+        'total_pendiente': float(r[4]) if r[4] else 0
+    } for r in resultados]), 200
 
-# ============ ESPECIALIDADES ============
-
-@app.route('/api/especialidades', methods=['GET'])
+@app.route('/api/consultas/facturacion-por-plan', methods=['GET'])
 @jwt_required()
-def get_especialidades():
-    especialidades = Especialidad.query.filter_by(activo=True).all()
-    return jsonify([e.to_dict() for e in especialidades]), 200
-
-@app.route('/api/especialidades', methods=['POST'])
-@jwt_required()
-def create_especialidad():
+def get_facturacion_por_plan():
     current_id = int(get_jwt_identity())
-    current_user = Usuario.query.get(current_id)
+    usuario = Usuario.query.get(current_id)
     
-    if current_user.rol.nombre != 'administrador':
+    if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
     
-    data = request.get_json()
+    resultados = db.session.execute(
+        db.text('''
+            SELECT p.nombre, COUNT(DISTINCT a.id_afiliado) as total_afiliados, COALESCE(SUM(f.total), 0) as facturacion_total
+            FROM planes p
+            LEFT JOIN afiliados a ON p.id_plan = a.id_plan
+            LEFT JOIN facturas f ON a.id_afiliado = f.id_afiliado AND f.estado = 'PAGADA'
+            GROUP BY p.id_plan, p.nombre
+        ''')
+    ).fetchall()
     
-    if 'nombre' not in data:
-        return jsonify({'error': 'El nombre es requerido'}), 400
-    
-    # Verificar que no exista
-    existente = Especialidad.query.filter_by(nombre=data['nombre']).first()
-    if existente:
-        return jsonify({'error': 'La especialidad ya existe'}), 400
-    
-    nueva = Especialidad(
-        nombre=data['nombre'],
-        descripcion=data.get('descripcion', '')
-    )
-    db.session.add(nueva)
-    db.session.commit()
-    
-    return jsonify(nueva.to_dict()), 201
+    return jsonify([{
+        'plan': r[0],
+        'total_afiliados': r[1],
+        'facturacion_total': float(r[2])
+    } for r in resultados]), 200
 
-@app.route('/api/especialidades/<int:esp_id>', methods=['PUT'])
+@app.route('/api/consultas/diagnosticos-frecuentes', methods=['GET'])
 @jwt_required()
-def update_especialidad(esp_id):
+def get_diagnosticos_frecuentes():
     current_id = int(get_jwt_identity())
-    current_user = Usuario.query.get(current_id)
+    usuario = Usuario.query.get(current_id)
     
-    if current_user.rol.nombre != 'administrador':
+    if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
     
-    especialidad = Especialidad.query.get_or_404(esp_id)
-    data = request.get_json()
+    resultados = db.session.execute(
+        db.text('''
+            SELECT p.especialidad, h.diagnostico, COUNT(*) as cantidad
+            FROM historial_clinico h
+            JOIN profesionales p ON h.id_profesional = p.id_profesional
+            GROUP BY p.especialidad, h.diagnostico
+            ORDER BY cantidad DESC
+            LIMIT 20
+        ''')
+    ).fetchall()
     
-    if 'nombre' in data:
-        especialidad.nombre = data['nombre']
-    if 'descripcion' in data:
-        especialidad.descripcion = data['descripcion']
-    if 'activo' in data:
-        especialidad.activo = data['activo']
-    
-    db.session.commit()
-    return jsonify(especialidad.to_dict()), 200
+    return jsonify([{
+        'especialidad': r[0],
+        'diagnostico': r[1],
+        'cantidad': r[2]
+    } for r in resultados]), 200
 
-@app.route('/api/especialidades/<int:esp_id>', methods=['DELETE'])
+@app.route('/api/consultas/centros-mas-utilizados', methods=['GET'])
 @jwt_required()
-def delete_especialidad(esp_id):
+def get_centros_mas_utilizados():
     current_id = int(get_jwt_identity())
-    current_user = Usuario.query.get(current_id)
+    usuario = Usuario.query.get(current_id)
     
-    if current_user.rol.nombre != 'administrador':
+    if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
     
-    especialidad = Especialidad.query.get_or_404(esp_id)
-    especialidad.activo = False
-    db.session.commit()
+    resultados = db.session.execute(
+        db.text('''
+            SELECT c.nombre, c.ciudad, COUNT(cit.id_cita) as total_citas
+            FROM centros_salud c
+            LEFT JOIN citas cit ON c.id_centro = cit.id_centro
+            GROUP BY c.id_centro, c.nombre, c.ciudad
+            ORDER BY total_citas DESC
+        ''')
+    ).fetchall()
     
-    return jsonify({'message': 'Especialidad eliminada'}), 200
+    return jsonify([{
+        'centro': r[0],
+        'ciudad': r[1],
+        'total_citas': r[2]
+    } for r in resultados]), 200
+
+@app.route('/api/consultas/citas-proximas-afiliado', methods=['GET'])
+@jwt_required()
+def get_citas_proximas_afiliado():
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+    
+    afiliado = Afiliado.query.filter_by(id_usuario=current_id).first()
+    if not afiliado:
+        return jsonify({'error': 'Afiliado no encontrado'}), 404
+    
+    ahora = datetime.now()
+    citas = Cita.query.filter(
+        Cita.id_afiliado == afiliado.id_afiliado,
+        Cita.fecha >= ahora,
+        Cita.estado.in_(['PENDIENTE', 'CONFIRMADA'])
+    ).order_by(Cita.fecha).limit(10).all()
+    
+    return jsonify([c.to_dict() for c in citas]), 200
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
