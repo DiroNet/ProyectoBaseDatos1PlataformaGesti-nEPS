@@ -62,7 +62,9 @@
 
         <div class="form-group">
           <label>Fecha de Nacimiento</label>
-          <input type="date" [(ngModel)]="fechaNacimiento" name="fechaNacimiento">
+          <input type="date" [(ngModel)]="fechaNacimiento" name="fechaNacimiento"
+                 [max]="maxFecha" required
+                 title="La fecha de nacimiento no puede ser futura">
         </div>
 
         <div class="form-group">

@@ -115,24 +115,37 @@
         <h3>Nuevo Afiliado</h3>
         <form (ngSubmit)="crearAfiliado()" class="form-grid">
           <div class="form-group">
-            <label>Email</label>
-            <input type="email" [(ngModel)]="nuevoAfiliado.email" name="email" required>
+            <label>Nombre <span style="color:red">*</span></label>
+            <input type="text" [(ngModel)]="nuevoAfiliado.nombre" name="nombre" required placeholder="Nombre completo">
           </div>
           <div class="form-group">
-            <label>Password</label>
-            <input type="password" [(ngModel)]="nuevoAfiliado.password" name="password" required>
+            <label>Email <span style="color:red">*</span></label>
+            <input type="email" [(ngModel)]="nuevoAfiliado.email" name="email" required placeholder="correo@ejemplo.com">
           </div>
           <div class="form-group">
-            <label>Nombre</label>
-            <input type="text" [(ngModel)]="nuevoAfiliado.nombre" name="nombre" required>
+            <label>Cédula <span style="color:red">*</span></label>
+            <input type="text" [(ngModel)]="nuevoAfiliado.documento" name="documento" required
+                   pattern="[0-9]{6,10}" maxlength="10"
+                   title="Solo dígitos, entre 6 y 10 caracteres"
+                   placeholder="12345678"
+                   (input)="filtrarNumerosAdmin($event, nuevoAfiliado, 'documento')">
           </div>
           <div class="form-group">
-            <label>Documento</label>
-            <input type="text" [(ngModel)]="nuevoAfiliado.documento" name="documento">
+            <label>Teléfono Celular <span style="color:red">*</span></label>
+            <input type="text" [(ngModel)]="nuevoAfiliado.telefono" name="telefono" required
+                   pattern="3[0-9]{9}" maxlength="10"
+                   title="Número móvil colombiano: 10 dígitos, empieza con 3"
+                   placeholder="3001234567"
+                   (input)="filtrarNumerosAdmin($event, nuevoAfiliado, 'telefono')">
           </div>
           <div class="form-group">
-            <label>Teléfono</label>
-            <input type="text" [(ngModel)]="nuevoAfiliado.telefono" name="telefono">
+            <label>Fecha de Nacimiento <span style="color:red">*</span></label>
+            <input type="date" [(ngModel)]="nuevoAfiliado.fecha_nacimiento" name="fecha_nacimiento" required
+                   [max]="maxFecha" title="La fecha de nacimiento no puede ser futura">
+          </div>
+          <div class="form-group">
+            <label>Dirección</label>
+            <input type="text" [(ngModel)]="nuevoAfiliado.direccion" name="direccion" placeholder="Calle 123, Ciudad">
           </div>
           <div class="form-group">
             <label>Plan</label>
@@ -140,6 +153,10 @@
               <option [ngValue]="null">-- Seleccionar --</option>
               <option *ngFor="let p of planes" [value]="p.id_plan">{{ p.nombre }}</option>
             </select>
+          </div>
+          <div class="form-group">
+            <label>Password <span style="color:red">*</span></label>
+            <input type="password" [(ngModel)]="nuevoAfiliado.password" name="password" required placeholder="Mínimo 6 caracteres">
           </div>
           <div class="form-actions">
             <button type="submit" [disabled]="loading" class="btn-primary">

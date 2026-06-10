@@ -36,7 +36,8 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
   filterPlan: number | null = null;
   filterCentro: number | null = null;
 
-  nuevoAfiliado: any = { email: '', password: '', nombre: '', documento: '', telefono: '', direccion: '', id_plan: null };
+  maxFecha = new Date().toISOString().split('T')[0];
+  nuevoAfiliado: any = { email: '', password: '', nombre: '', documento: '', telefono: '', direccion: '', fecha_nacimiento: '', id_plan: null };
   nuevoProfesional: any = { email: '', password: '', nombre: '', especialidad: '', id_centro: null };
   nuevoCentro: any = { nombre: '', direccion: '', ciudad: '' };
   nuevaFactura: any = { id_afiliado: '', total: 0 };
@@ -214,17 +215,72 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
     });
   }
 
+  filtrarNumerosAdmin(event: any, obj: any, campo: string): void {
+    const valor = event.target.value.replace(/\D/g, '');
+    obj[campo] = valor;
+    event.target.value = valor;
+  }
+
   crearAfiliado(): void {
-    if (!this.nuevoAfiliado.email || !this.nuevoAfiliado.password || !this.nuevoAfiliado.nombre) {
-      this.notification.error('Complete los campos requeridos');
+    const a = this.nuevoAfiliado;
+
+    if (!a.nombre?.trim()) {
+      this.notification.error('El nombre es requerido');
       return;
     }
+
+    if (!a.email?.trim()) {
+      this.notification.error('El correo electrónico es requerido');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(a.email)) {
+      this.notification.error('Ingrese un correo electrónico válido');
+      return;
+    }
+
+    if (!a.documento) {
+      this.notification.error('El número de cédula es requerido');
+      return;
+    }
+    if (a.documento.length < 6 || a.documento.length > 10) {
+      this.notification.error('La cédula debe tener entre 6 y 10 dígitos');
+      return;
+    }
+
+    if (!a.telefono) {
+      this.notification.error('El teléfono celular es requerido');
+      return;
+    }
+    if (!/^3\d{9}$/.test(a.telefono)) {
+      this.notification.error('El teléfono debe ser un número móvil colombiano (10 dígitos, empieza con 3)');
+      return;
+    }
+
+    if (!a.fecha_nacimiento) {
+      this.notification.error('La fecha de nacimiento es requerida');
+      return;
+    }
+    if (a.fecha_nacimiento > this.maxFecha) {
+      this.notification.error('La fecha de nacimiento no puede ser una fecha futura');
+      return;
+    }
+
+    if (!a.password) {
+      this.notification.error('La contraseña es requerida');
+      return;
+    }
+    if (a.password.length < 6) {
+      this.notification.error('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
     this.loading = true;
-    this.api.createAfiliado(this.nuevoAfiliado).subscribe({
+    this.api.createAfiliado(a).subscribe({
       next: () => {
         this.notification.success('Afiliado creado exitosamente');
         this.loading = false;
-        this.nuevoAfiliado = { email: '', password: '', nombre: '', documento: '', telefono: '', direccion: '', id_plan: null };
+        this.nuevoAfiliado = { email: '', password: '', nombre: '', documento: '', telefono: '', direccion: '', fecha_nacimiento: '', id_plan: null };
         this.loadAfiliadosSilent();
       },
       error: (err: any) => {

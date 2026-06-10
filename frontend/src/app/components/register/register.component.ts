@@ -25,6 +25,7 @@ export class RegisterComponent {
   id_plan: number | null = null;
   planes: any[] = [];
   loading = false;
+  maxFecha = new Date().toISOString().split('T')[0];
 
   constructor(
     private authService: AuthService,
@@ -53,17 +54,53 @@ export class RegisterComponent {
   }
 
   onSubmit(): void {
-    if (!this.email || !this.password || !this.nombre) {
-      this.notification.error('Complete los campos requeridos');
+    if (!this.nombre.trim()) {
+      this.notification.error('El nombre completo es requerido');
+      return;
+    }
+
+    if (!this.email.trim()) {
+      this.notification.error('El correo electrónico es requerido');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(this.email)) {
-      this.notification.error('Ingrese un email válido');
+      this.notification.error('Ingrese un correo electrónico válido');
       return;
     }
 
+    if (!this.documento) {
+      this.notification.error('El número de cédula es requerido');
+      return;
+    }
+    if (this.documento.length < 6 || this.documento.length > 10) {
+      this.notification.error('La cédula debe tener entre 6 y 10 dígitos');
+      return;
+    }
+
+    if (!this.telefono) {
+      this.notification.error('El teléfono celular es requerido');
+      return;
+    }
+    if (!/^3\d{9}$/.test(this.telefono)) {
+      this.notification.error('El teléfono debe ser un número móvil colombiano (10 dígitos, empieza con 3)');
+      return;
+    }
+
+    if (!this.fechaNacimiento) {
+      this.notification.error('La fecha de nacimiento es requerida');
+      return;
+    }
+    if (this.fechaNacimiento > this.maxFecha) {
+      this.notification.error('La fecha de nacimiento no puede ser una fecha futura');
+      return;
+    }
+
+    if (!this.password) {
+      this.notification.error('La contraseña es requerida');
+      return;
+    }
     if (this.password.length < 6) {
       this.notification.error('La contraseña debe tener al menos 6 caracteres');
       return;
@@ -71,16 +108,6 @@ export class RegisterComponent {
 
     if (this.password !== this.confirmPassword) {
       this.notification.error('Las contraseñas no coinciden');
-      return;
-    }
-
-    if (!this.documento || this.documento.length < 6 || this.documento.length > 10) {
-      this.notification.error('La cédula debe tener entre 6 y 10 dígitos');
-      return;
-    }
-
-    if (!/^3\d{9}$/.test(this.telefono)) {
-      this.notification.error('El teléfono debe ser un número móvil colombiano (10 dígitos, empieza con 3)');
       return;
     }
 

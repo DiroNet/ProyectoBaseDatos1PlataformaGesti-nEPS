@@ -58,7 +58,43 @@ with app.app_context():
 
 def validate_email(email):
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    return re.match(pattern, email) is not None
+    return bool(re.match(pattern, email))
+
+def validate_documento(doc):
+    """Cédula colombiana: solo dígitos, entre 6 y 10 caracteres."""
+    if not doc or not isinstance(doc, str):
+        return False
+    return doc.isdigit() and 6 <= len(doc) <= 10
+
+def validate_telefono_co(tel):
+    """Celular colombiano: 10 dígitos, empieza con 3."""
+    if not tel or not isinstance(tel, str):
+        return False
+    return bool(re.match(r'^3\d{9}$', tel))
+
+def validate_fecha_nacimiento(fecha_str):
+    """Fecha de nacimiento no puede ser futura ni posterior a hoy."""
+    if not fecha_str:
+        return False
+    try:
+        fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+        return fecha <= datetime.now().date()
+    except ValueError:
+        return False
+
+def validate_time(t):
+    """Hora válida: formato HH:MM, entre 06:00 y 20:00 inclusive."""
+    if not t or not isinstance(t, str):
+        return False
+    try:
+        h, m = t.split(':')
+        hora = int(h)
+        minuto = int(m)
+        if len(h) != 2 or len(m) != 2:
+            return False
+        return 6 <= hora <= 20 and 0 <= minuto <= 59 and not (hora == 20 and minuto > 0)
+    except (ValueError, AttributeError):
+        return False
 
 @app.route('/')
 def index():
@@ -89,25 +125,24 @@ def register():
     
     documento = data.get('documento', '')
     telefono = data.get('telefono', '')
-    
+    fecha_nacimiento = data.get('fecha_nacimiento', '')
+
     if documento:
-        if not documento.isdigit():
-            return jsonify({'error': 'El documento debe contener solo números'}), 400
-        if len(documento) < 6 or len(documento) > 10:
-            return jsonify({'error': 'La cédula debe tener entre 6 y 10 dígitos'}), 400
+        if not validate_documento(documento):
+            return jsonify({'error': 'La cédula debe tener entre 6 y 10 dígitos numéricos'}), 400
         if Afiliado.query.filter_by(documento=documento).first():
             return jsonify({'error': 'Este número de cédula ya está registrado'}), 400
-    
+
     if telefono:
-        if not telefono.isdigit():
-            return jsonify({'error': 'El teléfono debe contener solo números'}), 400
-        if len(telefono) != 10:
-            return jsonify({'error': 'El teléfono debe tener 10 dígitos'}), 400
-        if not telefono.startswith('3'):
-            return jsonify({'error': 'El teléfono debe ser un número móvil (empieza con 3)'}), 400
+        if not validate_telefono_co(telefono):
+            return jsonify({'error': 'El teléfono debe ser un número móvil colombiano (10 dígitos, empieza con 3)'}), 400
         if Afiliado.query.filter_by(telefono=telefono).first():
             return jsonify({'error': 'Este número de teléfono ya está registrado'}), 400
-    
+
+    if fecha_nacimiento:
+        if not validate_fecha_nacimiento(fecha_nacimiento):
+            return jsonify({'error': 'La fecha de nacimiento no puede ser una fecha futura'}), 400
+
     if data['rol'] not in ['AFILIADO', 'ADMIN', 'PROFESIONAL']:
         return jsonify({'error': 'Rol inválido'}), 400
     
