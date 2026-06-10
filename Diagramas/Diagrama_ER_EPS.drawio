@@ -1,422 +1,416 @@
 <mxfile host="app.diagrams.net">
-  <diagram name="Modelo ER EPS" id="er-eps-model">
-    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1100">
+  <diagram name="Modelo ER EPS - Mejorado" id="er-eps-mejorado">
+    <mxGraphModel dx="1800" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1200">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
 
         <!-- TITULO PRINCIPAL -->
-        <mxCell id="titulo_principal" value="MODELO ENTIDAD-RELACIÓN - SISTEMA EPS SALUD" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1;fontColor=#1a237e;" vertex="1" parent="1">
-          <mxGeometry x="500" y="10" width="500" height="40" as="geometry"/>
+        <mxCell id="titulo_principal" value="MODELO ENTIDAD-RELACIÓN&#xa;SISTEMA EPS SALUD" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=22;fontStyle=1;fontColor=#0d47a1;" vertex="1" parent="1">
+          <mxGeometry x="620" y="10" width="450" height="60" as="geometry"/>
         </mxCell>
 
-        <!-- ============ USUARIOS ============ -->
-        <mxCell id="usuarios" value="USUARIOS" style="shape=table;startSize=40;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#bbdefb;strokeColor=#1565c0;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="60" y="80" width="220" height="200" as="geometry"/>
-        </mxCell>
-        <mxCell id="usuarios_header_pk" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#388e3c;" vertex="1" parent="usuarios">
-          <mxGeometry y="40" width="220" height="30" as="geometry"/>
-        </mxCell>
-        <mxCell id="usuarios_col1" value="id_usuario: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="usuarios">
-          <mxGeometry y="70" width="220" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="usuarios_col2" value="nombre: VARCHAR(100) NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="usuarios">
-          <mxGeometry y="98" width="220" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="usuarios_col3" value="email: VARCHAR(100) UNIQUE NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="usuarios">
-          <mxGeometry y="126" width="220" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="usuarios_col4" value="password: VARCHAR(255) NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="usuarios">
-          <mxGeometry y="154" width="220" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="usuarios_col5" value="rol: ENUM('AFILIADO','ADMIN','PROFESIONAL')" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="usuarios">
-          <mxGeometry y="182" width="220" height="28" as="geometry"/>
+        <!-- SUBTITULO FECHA -->
+        <mxCell id="subtitulo" value="Junio 2026" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#546e7a;" vertex="1" parent="1">
+          <mxGeometry x="720" y="65" width="250" height="20" as="geometry"/>
         </mxCell>
 
-        <!-- ============ PLANES ============ -->
-        <mxCell id="planes" value="PLANES" style="shape=table;startSize=40;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#fff9c4;strokeColor=#f9a825;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="380" y="80" width="200" height="160" as="geometry"/>
+        <!-- ==================== USUARIOS ==================== -->
+        <mxCell id="usuarios" value="USUARIOS" style="shape=table;startSize=50;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#e3f2fd;strokeColor=#1565c0;strokeWidth=2;fontSize=14;fontColor=#0d47a1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="120" width="240" height="230" as="geometry"/>
         </mxCell>
-        <mxCell id="planes_header_pk" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#388e3c;" vertex="1" parent="planes">
-          <mxGeometry y="40" width="200" height="30" as="geometry"/>
+        <mxCell id="usuarios_header" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#2e7d32;fontSize=11;" vertex="1" parent="usuarios">
+          <mxGeometry y="50" width="240" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="planes_col1" value="id_plan: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="planes">
-          <mxGeometry y="70" width="200" height="28" as="geometry"/>
+        <mxCell id="usuarios_row1" value="id_usuario: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="usuarios">
+          <mxGeometry y="80" width="240" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="planes_col2" value="nombre: VARCHAR(100) NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="planes">
-          <mxGeometry y="98" width="200" height="28" as="geometry"/>
+        <mxCell id="usuarios_row2" value="nombre: VARCHAR(100) NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="usuarios">
+          <mxGeometry y="106" width="240" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="planes_col3" value="descripcion: TEXT" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="planes">
-          <mxGeometry y="126" width="200" height="28" as="geometry"/>
+        <mxCell id="usuarios_row3" value="email: VARCHAR(100) UNIQUE NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="usuarios">
+          <mxGeometry y="132" width="240" height="26" as="geometry"/>
         </mxCell>
-
-        <!-- PLANES CONTINUA -->
-        <mxCell id="planes2" value="" style="shape=table;startSize=1;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;align=center;fillColor=#fff9c4;strokeColor=#f9a825;" vertex="1" parent="1">
-          <mxGeometry x="380" y="250" width="200" height="40" as="geometry"/>
+        <mxCell id="usuarios_row4" value="password: VARCHAR(255) NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="usuarios">
+          <mxGeometry y="158" width="240" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="planes_col4" value="costo: DECIMAL(10,2) NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="planes2">
-          <mxGeometry y="1" width="200" height="28" as="geometry"/>
+        <mxCell id="usuarios_row5" value="rol: ENUM('AFILIADO','ADMIN','PROFESIONAL')" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="usuarios">
+          <mxGeometry y="184" width="240" height="26" as="geometry"/>
         </mxCell>
-
-        <!-- ============ CENTROS_SALUD ============ -->
-        <mxCell id="centros" value="CENTROS_SALUD" style="shape=table;startSize=40;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#c8e6c9;strokeColor=#388e3c;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="680" y="80" width="220" height="160" as="geometry"/>
-        </mxCell>
-        <mxCell id="centros_header_pk" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#388e3c;" vertex="1" parent="centros">
-          <mxGeometry y="40" width="220" height="30" as="geometry"/>
-        </mxCell>
-        <mxCell id="centros_col1" value="id_centro: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="centros">
-          <mxGeometry y="70" width="220" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="centros_col2" value="nombre: VARCHAR(100) NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="centros">
-          <mxGeometry y="98" width="220" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="centros_col3" value="direccion: VARCHAR(150)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="centros">
-          <mxGeometry y="126" width="220" height="28" as="geometry"/>
+        <mxCell id="usuarios_row6" value="fecha_creacion: DATETIME" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="usuarios">
+          <mxGeometry y="210" width="240" height="26" as="geometry"/>
         </mxCell>
 
-        <!-- CENTROS CONTINUA -->
-        <mxCell id="centros2" value="" style="shape=table;startSize=1;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;align=center;fillColor=#c8e6c9;strokeColor=#388e3c;" vertex="1" parent="1">
-          <mxGeometry x="680" y="250" width="220" height="40" as="geometry"/>
+        <!-- ==================== PLANES ==================== -->
+        <mxCell id="planes" value="PLANES" style="shape=table;startSize=50;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#fff3e0;strokeColor=#e65100;strokeWidth=2;fontSize=14;fontColor=#bf360c;" vertex="1" parent="1">
+          <mxGeometry x="60" y="400" width="240" height="170" as="geometry"/>
         </mxCell>
-        <mxCell id="centros_col4" value="ciudad: VARCHAR(50)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="centros2">
-          <mxGeometry y="1" width="220" height="28" as="geometry"/>
+        <mxCell id="planes_header" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#2e7d32;fontSize=11;" vertex="1" parent="planes">
+          <mxGeometry y="50" width="240" height="30" as="geometry"/>
         </mxCell>
-
-        <!-- ============ AFILIADOS ============ -->
-        <mxCell id="afiliados" value="AFILIADOS" style="shape=table;startSize=40;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#ffcdd2;strokeColor=#c62828;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="60" y="340" width="240" height="240" as="geometry"/>
+        <mxCell id="planes_row1" value="id_plan: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="planes">
+          <mxGeometry y="80" width="240" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="afiliados_header_pk" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#388e3c;" vertex="1" parent="afiliados">
-          <mxGeometry y="40" width="240" height="30" as="geometry"/>
+        <mxCell id="planes_row2" value="nombre: VARCHAR(100) NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="planes">
+          <mxGeometry y="106" width="240" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="afiliados_col1" value="id_afiliado: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="afiliados">
-          <mxGeometry y="70" width="240" height="28" as="geometry"/>
+        <mxCell id="planes_row3" value="descripcion: TEXT" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="planes">
+          <mxGeometry y="132" width="240" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="afiliados_col2" value="id_usuario: INT FK(NN) UNIQUE" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fillColor=#e1f5fe;" vertex="1" parent="afiliados">
-          <mxGeometry y="98" width="240" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="afiliados_col3" value="tipo_documento: VARCHAR(20)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="afiliados">
-          <mxGeometry y="126" width="240" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="afiliados_col4" value="documento: VARCHAR(20)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="afiliados">
-          <mxGeometry y="154" width="240" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="afiliados_col5" value="fecha_nacimiento: DATE" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="afiliados">
-          <mxGeometry y="182" width="240" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="afiliados_col6" value="telefono: VARCHAR(20) UNIQUE" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="afiliados">
-          <mxGeometry y="210" width="240" height="28" as="geometry"/>
+        <mxCell id="planes_row4" value="costo: DECIMAL(10,2) NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="planes">
+          <mxGeometry y="158" width="240" height="26" as="geometry"/>
         </mxCell>
 
-        <!-- AFILIADOS CONTINUA -->
-        <mxCell id="afiliados2" value="" style="shape=table;startSize=1;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;align=center;fillColor=#ffcdd2;strokeColor=#c62828;" vertex="1" parent="1">
-          <mxGeometry x="60" y="610" width="240" height="60" as="geometry"/>
+        <!-- ==================== CENTROS_SALUD ==================== -->
+        <mxCell id="centros" value="CENTROS_SALUD" style="shape=table;startSize=50;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#e8f5e9;strokeColor=#2e7d32;strokeWidth=2;fontSize=14;fontColor=#1b5e20;" vertex="1" parent="1">
+          <mxGeometry x="60" y="620" width="240" height="170" as="geometry"/>
         </mxCell>
-        <mxCell id="afiliados_col7" value="direccion: VARCHAR(150)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="afiliados2">
-          <mxGeometry y="1" width="240" height="28" as="geometry"/>
+        <mxCell id="centros_header" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#2e7d32;fontSize=11;" vertex="1" parent="centros">
+          <mxGeometry y="50" width="240" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="afiliados_col8" value="id_plan: INT FK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fillColor=#e1f5fe;" vertex="1" parent="afiliados2">
-          <mxGeometry y="29" width="240" height="28" as="geometry"/>
+        <mxCell id="centros_row1" value="id_centro: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="centros">
+          <mxGeometry y="80" width="240" height="26" as="geometry"/>
         </mxCell>
-
-        <!-- ============ PROFESIONALES ============ -->
-        <mxCell id="profesionales" value="PROFESIONALES" style="shape=table;startSize=40;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#e1bee7;strokeColor=#7b1fa2;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="380" y="340" width="240" height="180" as="geometry"/>
+        <mxCell id="centros_row2" value="nombre: VARCHAR(100) NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="centros">
+          <mxGeometry y="106" width="240" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="profesionales_header_pk" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#388e3c;" vertex="1" parent="profesionales">
-          <mxGeometry y="40" width="240" height="30" as="geometry"/>
+        <mxCell id="centros_row3" value="direccion: VARCHAR(150)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="centros">
+          <mxGeometry y="132" width="240" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="profesionales_col1" value="id_profesional: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="profesionales">
-          <mxGeometry y="70" width="240" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="profesionales_col2" value="id_usuario: INT FK(NN)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fillColor=#e1f5fe;" vertex="1" parent="profesionales">
-          <mxGeometry y="98" width="240" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="profesionales_col3" value="especialidad: VARCHAR(100) NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="profesionales">
-          <mxGeometry y="126" width="240" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="profesionales_col4" value="id_centro: INT FK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fillColor=#e1f5fe;" vertex="1" parent="profesionales">
-          <mxGeometry y="154" width="240" height="28" as="geometry"/>
+        <mxCell id="centros_row4" value="ciudad: VARCHAR(50)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="centros">
+          <mxGeometry y="158" width="240" height="26" as="geometry"/>
         </mxCell>
 
-        <!-- ============ CITAS ============ -->
-        <mxCell id="citas" value="CITAS" style="shape=table;startSize=40;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#ffe0b2;strokeColor=#ef6c00;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="680" y="340" width="240" height="210" as="geometry"/>
+        <!-- ==================== AFILIADOS ==================== -->
+        <mxCell id="afiliados" value="AFILIADOS" style="shape=table;startSize=50;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#fce4ec;strokeColor=#c2185b;strokeWidth=2;fontSize=14;fontColor=#880e4f;" vertex="1" parent="1">
+          <mxGeometry x="380" y="120" width="260" height="250" as="geometry"/>
         </mxCell>
-        <mxCell id="citas_header_pk" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#388e3c;" vertex="1" parent="citas">
-          <mxGeometry y="40" width="240" height="30" as="geometry"/>
+        <mxCell id="afiliados_header" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#2e7d32;fontSize=11;" vertex="1" parent="afiliados">
+          <mxGeometry y="50" width="260" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="citas_col1" value="id_cita: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="citas">
-          <mxGeometry y="70" width="240" height="28" as="geometry"/>
+        <mxCell id="afiliados_row1" value="id_afiliado: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="afiliados">
+          <mxGeometry y="80" width="260" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="citas_col2" value="id_afiliado: INT FK(NN)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fillColor=#e1f5fe;" vertex="1" parent="citas">
-          <mxGeometry y="98" width="240" height="28" as="geometry"/>
+        <mxCell id="afiliados_row2" value="id_usuario: INT FK(NN) UNIQUE" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;fillColor=#e1f5fe;" vertex="1" parent="afiliados">
+          <mxGeometry y="106" width="260" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="citas_col3" value="id_profesional: INT FK(NN)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fillColor=#e1f5fe;" vertex="1" parent="citas">
-          <mxGeometry y="126" width="240" height="28" as="geometry"/>
+        <mxCell id="afiliados_row3" value="tipo_documento: VARCHAR(20)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="afiliados">
+          <mxGeometry y="132" width="260" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="citas_col4" value="id_centro: INT FK(NN)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fillColor=#e1f5fe;" vertex="1" parent="citas">
-          <mxGeometry y="154" width="240" height="28" as="geometry"/>
+        <mxCell id="afiliados_row4" value="documento: VARCHAR(20)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="afiliados">
+          <mxGeometry y="158" width="260" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="citas_col5" value="fecha: DATETIME NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="citas">
-          <mxGeometry y="182" width="240" height="28" as="geometry"/>
+        <mxCell id="afiliados_row5" value="fecha_nacimiento: DATE" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="afiliados">
+          <mxGeometry y="184" width="260" height="26" as="geometry"/>
         </mxCell>
-
-        <!-- CITAS CONTINUA -->
-        <mxCell id="citas2" value="" style="shape=table;startSize=1;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;align=center;fillColor=#ffe0b2;strokeColor=#ef6c00;" vertex="1" parent="1">
-          <mxGeometry x="680" y="560" width="240" height="50" as="geometry"/>
+        <mxCell id="afiliados_row6" value="telefono: VARCHAR(20) UNIQUE" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="afiliados">
+          <mxGeometry y="210" width="260" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="citas_col6" value="estado: ENUM('PENDIENTE','CONFIRMADA','CANCELADA','FINALIZADA')" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=9;" vertex="1" parent="citas2">
-          <mxGeometry y="1" width="240" height="35" as="geometry"/>
+        <mxCell id="afiliados_row7" value="direccion: VARCHAR(150)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="afiliados">
+          <mxGeometry y="236" width="260" height="26" as="geometry"/>
         </mxCell>
-
-        <!-- ============ FACTURAS ============ -->
-        <mxCell id="facturas" value="FACTURAS" style="shape=table;startSize=40;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#fff9c4;strokeColor=#f9a825;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="60" y="720" width="240" height="180" as="geometry"/>
-        </mxCell>
-        <mxCell id="facturas_header_pk" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#388e3c;" vertex="1" parent="facturas">
-          <mxGeometry y="40" width="240" height="30" as="geometry"/>
-        </mxCell>
-        <mxCell id="facturas_col1" value="id_factura: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="facturas">
-          <mxGeometry y="70" width="240" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="facturas_col2" value="id_afiliado: INT FK(NN)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fillColor=#e1f5fe;" vertex="1" parent="facturas">
-          <mxGeometry y="98" width="240" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="facturas_col3" value="fecha: DATE NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="facturas">
-          <mxGeometry y="126" width="240" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="facturas_col4" value="total: DECIMAL(10,2)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="facturas">
-          <mxGeometry y="154" width="240" height="28" as="geometry"/>
+        <mxCell id="afiliados_row8" value="id_plan: INT FK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;fillColor=#e1f5fe;" vertex="1" parent="afiliados">
+          <mxGeometry y="262" width="260" height="26" as="geometry"/>
         </mxCell>
 
-        <!-- FACTURAS CONTINUA -->
-        <mxCell id="facturas2" value="" style="shape=table;startSize=1;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;align=center;fillColor=#fff9c4;strokeColor=#f9a825;" vertex="1" parent="1">
-          <mxGeometry x="60" y="910" width="240" height="50" as="geometry"/>
+        <!-- ==================== PROFESIONALES ==================== -->
+        <mxCell id="profesionales" value="PROFESIONALES" style="shape=table;startSize=50;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#ede7f6;strokeColor=#7b1fa2;strokeWidth=2;fontSize=14;fontColor=#4a148c;" vertex="1" parent="1">
+          <mxGeometry x="720" y="120" width="260" height="190" as="geometry"/>
         </mxCell>
-        <mxCell id="facturas_col5" value="estado: ENUM('PENDIENTE','PAGADA')" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="facturas2">
-          <mxGeometry y="1" width="240" height="30" as="geometry"/>
+        <mxCell id="profesionales_header" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#2e7d32;fontSize=11;" vertex="1" parent="profesionales">
+          <mxGeometry y="50" width="260" height="30" as="geometry"/>
         </mxCell>
-
-        <!-- ============ PAGOS ============ -->
-        <mxCell id="pagos" value="PAGOS" style="shape=table;startSize=40;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#c8e6c9;strokeColor=#388e3c;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="380" y="570" width="220" height="180" as="geometry"/>
+        <mxCell id="profesionales_row1" value="id_profesional: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="profesionales">
+          <mxGeometry y="80" width="260" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="pagos_header_pk" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#388e3c;" vertex="1" parent="pagos">
-          <mxGeometry y="40" width="220" height="30" as="geometry"/>
+        <mxCell id="profesionales_row2" value="id_usuario: INT FK(NN)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;fillColor=#e1f5fe;" vertex="1" parent="profesionales">
+          <mxGeometry y="106" width="260" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="pagos_col1" value="id_pago: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="pagos">
-          <mxGeometry y="70" width="220" height="28" as="geometry"/>
+        <mxCell id="profesionales_row3" value="especialidad: VARCHAR(100) NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="profesionales">
+          <mxGeometry y="132" width="260" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="pagos_col2" value="id_factura: INT FK(NN)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fillColor=#e1f5fe;" vertex="1" parent="pagos">
-          <mxGeometry y="98" width="220" height="28" as="geometry"/>
+        <mxCell id="profesionales_row4" value="id_centro: INT FK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;fillColor=#e1f5fe;" vertex="1" parent="profesionales">
+          <mxGeometry y="158" width="260" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="pagos_col3" value="fecha: DATE NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="pagos">
-          <mxGeometry y="126" width="220" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="pagos_col4" value="monto: DECIMAL(10,2) NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="pagos">
-          <mxGeometry y="154" width="220" height="28" as="geometry"/>
+        <mxCell id="profesionales_row5" value="tarjeta_profesional: VARCHAR(50)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="profesionales">
+          <mxGeometry y="184" width="260" height="26" as="geometry"/>
         </mxCell>
 
-        <!-- PAGOS CONTINUA -->
-        <mxCell id="pagos2" value="" style="shape=table;startSize=1;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;align=center;fillColor=#c8e6c9;strokeColor=#388e3c;" vertex="1" parent="1">
-          <mxGeometry x="380" y="760" width="220" height="40" as="geometry"/>
+        <!-- ==================== CITAS ==================== -->
+        <mxCell id="citas" value="CITAS" style="shape=table;startSize=50;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#fff8e1;strokeColor=#f9a825;strokeWidth=2;fontSize=14;fontColor=#f57f17;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="120" width="260" height="220" as="geometry"/>
         </mxCell>
-        <mxCell id="pagos_col5" value="metodo_pago: VARCHAR(50)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="pagos2">
-          <mxGeometry y="1" width="220" height="28" as="geometry"/>
+        <mxCell id="citas_header" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#2e7d32;fontSize=11;" vertex="1" parent="citas">
+          <mxGeometry y="50" width="260" height="30" as="geometry"/>
         </mxCell>
-
-        <!-- ============ HISTORIAL_CLINICO ============ -->
-        <mxCell id="historial" value="HISTORIAL_CLINICO" style="shape=table;startSize=40;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#ffcdd2;strokeColor=#c62828;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="680" y="680" width="240" height="200" as="geometry"/>
+        <mxCell id="citas_row1" value="id_cita: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="citas">
+          <mxGeometry y="80" width="260" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="historial_header_pk" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#388e3c;" vertex="1" parent="historial">
-          <mxGeometry y="40" width="240" height="30" as="geometry"/>
+        <mxCell id="citas_row2" value="id_afiliado: INT FK(NN)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;fillColor=#e1f5fe;" vertex="1" parent="citas">
+          <mxGeometry y="106" width="260" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="historial_col1" value="id_historial: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="historial">
-          <mxGeometry y="70" width="240" height="28" as="geometry"/>
+        <mxCell id="citas_row3" value="id_profesional: INT FK(NN)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;fillColor=#e1f5fe;" vertex="1" parent="citas">
+          <mxGeometry y="132" width="260" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="historial_col2" value="id_afiliado: INT FK(NN)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fillColor=#e1f5fe;" vertex="1" parent="historial">
-          <mxGeometry y="98" width="240" height="28" as="geometry"/>
+        <mxCell id="citas_row4" value="id_centro: INT FK(NN)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;fillColor=#e1f5fe;" vertex="1" parent="citas">
+          <mxGeometry y="158" width="260" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="historial_col3" value="id_profesional: INT FK(NN)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fillColor=#e1f5fe;" vertex="1" parent="historial">
-          <mxGeometry y="126" width="240" height="28" as="geometry"/>
+        <mxCell id="citas_row5" value="fecha: DATETIME NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="citas">
+          <mxGeometry y="184" width="260" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="historial_col4" value="fecha: DATE NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="historial">
-          <mxGeometry y="154" width="240" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="historial_col5" value="diagnostico: TEXT" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="historial">
-          <mxGeometry y="182" width="240" height="28" as="geometry"/>
+        <mxCell id="citas_row6" value="estado: ENUM('PENDIENTE','CONFIRMADA','CANCELADA','FINALIZADA')" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="citas">
+          <mxGeometry y="210" width="260" height="26" as="geometry"/>
         </mxCell>
 
-        <!-- HISTORIAL CONTINUA -->
-        <mxCell id="historial2" value="" style="shape=table;startSize=1;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;align=center;fillColor=#ffcdd2;strokeColor=#c62828;" vertex="1" parent="1">
-          <mxGeometry x="680" y="890" width="240" height="40" as="geometry"/>
+        <!-- ==================== FACTURAS ==================== -->
+        <mxCell id="facturas" value="FACTURAS" style="shape=table;startSize=50;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#e1f5fe;strokeColor=#0277bd;strokeWidth=2;fontSize=14;fontColor=#01579b;" vertex="1" parent="1">
+          <mxGeometry x="380" y="420" width="260" height="180" as="geometry"/>
         </mxCell>
-        <mxCell id="historial_col6" value="tratamiento: TEXT" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="historial2">
-          <mxGeometry y="1" width="240" height="28" as="geometry"/>
+        <mxCell id="facturas_header" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#2e7d32;fontSize=11;" vertex="1" parent="facturas">
+          <mxGeometry y="50" width="260" height="30" as="geometry"/>
         </mxCell>
-
-        <!-- ============ DISPONIBILIDAD_PROFESIONAL ============ -->
-        <mxCell id="disponibilidad" value="DISPONIBILIDAD_PROFESIONAL" style="shape=table;startSize=40;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#e1bee7;strokeColor=#7b1fa2;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="990" y="340" width="260" height="210" as="geometry"/>
+        <mxCell id="facturas_row1" value="id_factura: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="facturas">
+          <mxGeometry y="80" width="260" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="disponibilidad_header_pk" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#388e3c;" vertex="1" parent="disponibilidad">
-          <mxGeometry y="40" width="260" height="30" as="geometry"/>
+        <mxCell id="facturas_row2" value="id_afiliado: INT FK(NN)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;fillColor=#e1f5fe;" vertex="1" parent="facturas">
+          <mxGeometry y="106" width="260" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="disponibilidad_col1" value="id_disponibilidad: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="disponibilidad">
-          <mxGeometry y="70" width="260" height="28" as="geometry"/>
+        <mxCell id="facturas_row3" value="fecha: DATE NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="facturas">
+          <mxGeometry y="132" width="260" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="disponibilidad_col2" value="id_profesional: INT FK(NN)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fillColor=#e1f5fe;" vertex="1" parent="disponibilidad">
-          <mxGeometry y="98" width="260" height="28" as="geometry"/>
+        <mxCell id="facturas_row4" value="total: DECIMAL(10,2)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="facturas">
+          <mxGeometry y="158" width="260" height="26" as="geometry"/>
         </mxCell>
-        <mxCell id="disponibilidad_col3" value="dia_semana: INT NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="disponibilidad">
-          <mxGeometry y="126" width="260" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="disponibilidad_col4" value="hora_inicio: TIME NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="disponibilidad">
-          <mxGeometry y="154" width="260" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="disponibilidad_col5" value="hora_fin: TIME NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="disponibilidad">
-          <mxGeometry y="182" width="260" height="28" as="geometry"/>
+        <mxCell id="facturas_row5" value="estado: ENUM('PENDIENTE','PAGADA')" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="facturas">
+          <mxGeometry y="184" width="260" height="26" as="geometry"/>
         </mxCell>
 
-        <!-- DISPONIBILIDAD CONTINUA -->
-        <mxCell id="disponibilidad2" value="" style="shape=table;startSize=1;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;align=center;fillColor=#e1bee7;strokeColor=#7b1fa2;" vertex="1" parent="1">
-          <mxGeometry x="990" y="560" width="260" height="40" as="geometry"/>
+        <!-- ==================== PAGOS ==================== -->
+        <mxCell id="pagos" value="PAGOS" style="shape=table;startSize=50;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#e0f2f1;strokeColor=#00695c;strokeWidth=2;fontSize=14;fontColor=#004d40;" vertex="1" parent="1">
+          <mxGeometry x="720" y="400" width="260" height="180" as="geometry"/>
         </mxCell>
-        <mxCell id="disponibilidad_col6" value="activo: BOOLEAN DEFAULT TRUE" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="disponibilidad2">
-          <mxGeometry y="1" width="260" height="28" as="geometry"/>
+        <mxCell id="pagos_header" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#2e7d32;fontSize=11;" vertex="1" parent="pagos">
+          <mxGeometry y="50" width="260" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="pagos_row1" value="id_pago: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="pagos">
+          <mxGeometry y="80" width="260" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="pagos_row2" value="id_factura: INT FK(NN)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;fillColor=#e1f5fe;" vertex="1" parent="pagos">
+          <mxGeometry y="106" width="260" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="pagos_row3" value="fecha: DATE NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="pagos">
+          <mxGeometry y="132" width="260" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="pagos_row4" value="monto: DECIMAL(10,2) NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="pagos">
+          <mxGeometry y="158" width="260" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="pagos_row5" value="metodo_pago: VARCHAR(50)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="pagos">
+          <mxGeometry y="184" width="260" height="26" as="geometry"/>
         </mxCell>
 
-        <!-- ============ RELACIONES ============ -->
+        <!-- ==================== HISTORIAL_CLINICO ==================== -->
+        <mxCell id="historial" value="HISTORIAL_CLINICO" style="shape=table;startSize=50;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#fbe9e7;strokeColor=#bf360c;strokeWidth=2;fontSize=14;fontColor=#3e2723;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="420" width="260" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="historial_header" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#2e7d32;fontSize=11;" vertex="1" parent="historial">
+          <mxGeometry y="50" width="260" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="historial_row1" value="id_historial: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="historial">
+          <mxGeometry y="80" width="260" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="historial_row2" value="id_afiliado: INT FK(NN)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;fillColor=#e1f5fe;" vertex="1" parent="historial">
+          <mxGeometry y="106" width="260" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="historial_row3" value="id_profesional: INT FK(NN)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;fillColor=#e1f5fe;" vertex="1" parent="historial">
+          <mxGeometry y="132" width="260" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="historial_row4" value="fecha: DATE NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="historial">
+          <mxGeometry y="158" width="260" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="historial_row5" value="diagnostico: TEXT" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="historial">
+          <mxGeometry y="184" width="260" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="historial_row6" value="tratamiento: TEXT" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="historial">
+          <mxGeometry y="210" width="260" height="26" as="geometry"/>
+        </mxCell>
 
-        <!-- usuarios -> afiliados (1:1) -->
-        <mxCell id="rel_usu_afiliados" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1565c0;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1" source="usuarios_col2" target="afiliados_col2">
+        <!-- ==================== DISPONIBILIDAD_PROFESIONAL ==================== -->
+        <mxCell id="disponibilidad" value="DISPONIBILIDAD&#xa;PROFESIONAL" style="shape=table;startSize=50;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#e1bee7;strokeColor=#6a1b9a;strokeWidth=2;fontSize=14;fontColor=#4a148c;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="120" width="260" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="disponibilidad_header" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=10;fontStyle=5;fillColor=#c8e6c9;strokeColor=#2e7d32;fontSize=11;" vertex="1" parent="disponibilidad">
+          <mxGeometry y="50" width="260" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="disponibilidad_row1" value="id_disponibilidad: INT (AI)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="disponibilidad">
+          <mxGeometry y="80" width="260" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="disponibilidad_row2" value="id_profesional: INT FK(NN)" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;fillColor=#e1f5fe;" vertex="1" parent="disponibilidad">
+          <mxGeometry y="106" width="260" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="disponibilidad_row3" value="dia_semana: INT NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="disponibilidad">
+          <mxGeometry y="132" width="260" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="disponibilidad_row4" value="hora_inicio: TIME NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="disponibilidad">
+          <mxGeometry y="158" width="260" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="disponibilidad_row5" value="hora_fin: TIME NOT NULL" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="disponibilidad">
+          <mxGeometry y="184" width="260" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="disponibilidad_row6" value="activo: BOOLEAN DEFAULT TRUE" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fontSize=10;" vertex="1" parent="disponibilidad">
+          <mxGeometry y="210" width="260" height="26" as="geometry"/>
+        </mxCell>
+
+        <!-- ==================== RELACIONES (LÍNEAS) ==================== -->
+
+        <!-- USUARIOS → AFILIADOS (1:1) -->
+        <mxCell id="rel_ua" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#c2185b;strokeWidth=2;endArrow=classic;endFill=1;sourcePerimeter=0;targetPerimeter=0;" edge="1" parent="1" source="usuarios" target="afiliados">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="label_usu_afiliados" value="1:1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=1;fontColor=#1565c0;" vertex="1" parent="1">
-          <mxGeometry x="180" y="310" width="40" height="20" as="geometry"/>
+        <mxCell id="label_ua" value="1:1" style="text;html=1;strokeColor=none;fillColor=#fce4ec;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#c2185b;spacingLeft=5;spacingRight=5;" vertex="1" parent="1">
+          <mxGeometry x="310" y="280" width="40" height="25" as="geometry"/>
         </mxCell>
 
-        <!-- usuarios -> profesionales (1:N) -->
-        <mxCell id="rel_usu_prof" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7b1fa2;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1" source="usuarios_col2" target="profesionales_col2">
+        <!-- USUARIOS → PROFESIONALES (1:N) -->
+        <mxCell id="rel_up" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7b1fa2;strokeWidth=2;endArrow=classic;endFill=1;sourcePerimeter=0;targetPerimeter=0;" edge="1" parent="1" source="usuarios" target="profesionales">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="label_usu_prof" value="1:N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=1;fontColor=#7b1fa2;" vertex="1" parent="1">
-          <mxGeometry x="320" y="310" width="40" height="20" as="geometry"/>
+        <mxCell id="label_up" value="1:N" style="text;html=1;strokeColor=none;fillColor=#ede7f6;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#7b1fa2;spacingLeft=5;spacingRight=5;" vertex="1" parent="1">
+          <mxGeometry x="620" y="220" width="40" height="25" as="geometry"/>
         </mxCell>
 
-        <!-- planes -> afiliados (1:N) -->
-        <mxCell id="rel_plan_afiliados" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#f9a825;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1" source="planes_header_pk" target="afiliados_col8">
+        <!-- PLANES → AFILIADOS (1:N) -->
+        <mxCell id="rel_pa" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#e65100;strokeWidth=2;endArrow=classic;endFill=1;sourcePerimeter=0;targetPerimeter=0;" edge="1" parent="1" source="planes" target="afiliados">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="label_plan_afiliados" value="1:N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=1;fontColor=#f9a825;" vertex="1" parent="1">
-          <mxGeometry x="340" y="580" width="40" height="20" as="geometry"/>
+        <mxCell id="label_pa" value="1:N" style="text;html=1;strokeColor=none;fillColor=#fff3e0;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#e65100;spacingLeft=5;spacingRight=5;" vertex="1" parent="1">
+          <mxGeometry x="310" y="380" width="40" height="25" as="geometry"/>
         </mxCell>
 
-        <!-- centros -> profesionales (1:N) -->
-        <mxCell id="rel_centro_prof" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#388e3c;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1" source="centros_header_pk" target="profesionales_col4">
+        <!-- CENTROS → PROFESIONALES (1:N) -->
+        <mxCell id="rel_cp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2e7d32;strokeWidth=2;endArrow=classic;endFill=1;sourcePerimeter=0;targetPerimeter=0;" edge="1" parent="1" source="centros" target="profesionales">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="label_centro_prof" value="1:N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=1;fontColor=#388e3c;" vertex="1" parent="1">
-          <mxGeometry x="640" y="360" width="40" height="20" as="geometry"/>
+        <mxCell id="label_cp" value="1:N" style="text;html=1;strokeColor=none;fillColor=#e8f5e9;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#2e7d32;spacingLeft=5;spacingRight=5;" vertex="1" parent="1">
+          <mxGeometry x="350" y="580" width="40" height="25" as="geometry"/>
         </mxCell>
 
-        <!-- centros -> citas (1:N) -->
-        <mxCell id="rel_centro_citas" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#388e3c;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1" source="centros_header_pk" target="citas_col4">
+        <!-- CENTROS → CITAS (1:N) -->
+        <mxCell id="rel_cc" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2e7d32;strokeWidth=2;endArrow=classic;endFill=1;sourcePerimeter=0;targetPerimeter=0;" edge="1" parent="1" source="centros" target="citas">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="label_centro_citas" value="1:N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=1;fontColor=#388e3c;" vertex="1" parent="1">
-          <mxGeometry x="660" y="480" width="40" height="20" as="geometry"/>
+        <mxCell id="label_cc" value="1:N" style="text;html=1;strokeColor=none;fillColor=#e8f5e9;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#2e7d32;spacingLeft=5;spacingRight=5;" vertex="1" parent="1">
+          <mxGeometry x="920" y="580" width="40" height="25" as="geometry"/>
         </mxCell>
 
-        <!-- afiliados -> citas (1:N) -->
-        <mxCell id="rel_afiliados_citas" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#c62828;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1" source="afiliados_header_pk" target="citas_col2">
+        <!-- AFILIADOS → CITAS (1:N) -->
+        <mxCell id="rel_ac" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#c2185b;strokeWidth=2;endArrow=classic;endFill=1;sourcePerimeter=0;targetPerimeter=0;" edge="1" parent="1" source="afiliados" target="citas">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="label_afiliados_citas" value="1:N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=1;fontColor=#c62828;" vertex="1" parent="1">
-          <mxGeometry x="390" y="330" width="40" height="20" as="geometry"/>
+        <mxCell id="label_ac" value="1:N" style="text;html=1;strokeColor=none;fillColor=#fce4ec;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#c2185b;spacingLeft=5;spacingRight=5;" vertex="1" parent="1">
+          <mxGeometry x="960" y="200" width="40" height="25" as="geometry"/>
         </mxCell>
 
-        <!-- profesionales -> citas (1:N) -->
-        <mxCell id="rel_prof_citas" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7b1fa2;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1" source="profesionales_header_pk" target="citas_col3">
+        <!-- PROFESIONALES → CITAS (1:N) -->
+        <mxCell id="rel_pc" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7b1fa2;strokeWidth=2;endArrow=classic;endFill=1;sourcePerimeter=0;targetPerimeter=0;" edge="1" parent="1" source="profesionales" target="citas">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="label_prof_citas" value="1:N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=1;fontColor=#7b1fa2;" vertex="1" parent="1">
-          <mxGeometry x="620" y="360" width="40" height="20" as="geometry"/>
+        <mxCell id="label_pc" value="1:N" style="text;html=1;strokeColor=none;fillColor=#ede7f6;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#7b1fa2;spacingLeft=5;spacingRight=5;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="200" width="40" height="25" as="geometry"/>
         </mxCell>
 
-        <!-- afiliados -> facturas (1:N) -->
-        <mxCell id="rel_afiliados_facturas" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#c62828;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1" source="afiliados_header_pk" target="facturas_col2">
+        <!-- AFILIADOS → FACTURAS (1:N) -->
+        <mxCell id="rel_af" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#c2185b;strokeWidth=2;endArrow=classic;endFill=1;sourcePerimeter=0;targetPerimeter=0;" edge="1" parent="1" source="afiliados" target="facturas">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="label_afiliados_facturas" value="1:N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=1;fontColor=#c62828;" vertex="1" parent="1">
-          <mxGeometry x="180" y="680" width="40" height="20" as="geometry"/>
+        <mxCell id="label_af" value="1:N" style="text;html=1;strokeColor=none;fillColor=#fce4ec;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#c2185b;spacingLeft=5;spacingRight=5;" vertex="1" parent="1">
+          <mxGeometry x="360" y="380" width="40" height="25" as="geometry"/>
         </mxCell>
 
-        <!-- facturas -> pagos (1:N) -->
-        <mxCell id="rel_facturas_pagos" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#f9a825;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1" source="facturas_header_pk" target="pagos_col2">
+        <!-- FACTURAS → PAGOS (1:N) -->
+        <mxCell id="rel_fp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0277bd;strokeWidth=2;endArrow=classic;endFill=1;sourcePerimeter=0;targetPerimeter=0;" edge="1" parent="1" source="facturas" target="pagos">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="label_facturas_pagos" value="1:N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=1;fontColor=#f9a825;" vertex="1" parent="1">
-          <mxGeometry x="340" y="700" width="40" height="20" as="geometry"/>
+        <mxCell id="label_fp" value="1:N" style="text;html=1;strokeColor=none;fillColor=#e1f5fe;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#0277bd;spacingLeft=5;spacingRight=5;" vertex="1" parent="1">
+          <mxGeometry x="650" y="480" width="40" height="25" as="geometry"/>
         </mxCell>
 
-        <!-- afiliados -> historial (1:N) -->
-        <mxCell id="rel_afiliados_historial" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#c62828;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1" source="afiliados_header_pk" target="historial_col2">
+        <!-- AFILIADOS → HISTORIAL (1:N) -->
+        <mxCell id="rel_ah" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#c2185b;strokeWidth=2;endArrow=classic;endFill=1;sourcePerimeter=0;targetPerimeter=0;" edge="1" parent="1" source="afiliados" target="historial">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="label_afiliados_historial" value="1:N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=1;fontColor=#c62828;" vertex="1" parent="1">
-          <mxGeometry x="400" y="680" width="40" height="20" as="geometry"/>
+        <mxCell id="label_ah" value="1:N" style="text;html=1;strokeColor=none;fillColor=#fce4ec;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#c2185b;spacingLeft=5;spacingRight=5;" vertex="1" parent="1">
+          <mxGeometry x="970" y="380" width="40" height="25" as="geometry"/>
         </mxCell>
 
-        <!-- profesionales -> historial (1:N) -->
-        <mxCell id="rel_prof_historial" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7b1fa2;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1" source="profesionales_header_pk" target="historial_col3">
+        <!-- PROFESIONALES → HISTORIAL (1:N) -->
+        <mxCell id="rel_ph" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7b1fa2;strokeWidth=2;endArrow=classic;endFill=1;sourcePerimeter=0;targetPerimeter=0;" edge="1" parent="1" source="profesionales" target="historial">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="label_prof_historial" value="1:N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=1;fontColor=#7b1fa2;" vertex="1" parent="1">
-          <mxGeometry x="580" y="640" width="40" height="20" as="geometry"/>
+        <mxCell id="label_ph" value="1:N" style="text;html=1;strokeColor=none;fillColor=#ede7f6;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#7b1fa2;spacingLeft=5;spacingRight=5;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="380" width="40" height="25" as="geometry"/>
         </mxCell>
 
-        <!-- profesionales -> disponibilidad (1:N) -->
-        <mxCell id="rel_prof_disp" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7b1fa2;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1" source="profesionales_header_pk" target="disponibilidad_col2">
+        <!-- PROFESIONALES → DISPONIBILIDAD (1:N) -->
+        <mxCell id="rel_pd" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7b1fa2;strokeWidth=2;endArrow=classic;endFill=1;sourcePerimeter=0;targetPerimeter=0;" edge="1" parent="1" source="profesionales" target="disponibilidad">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="label_prof_disp" value="1:N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=1;fontColor=#7b1fa2;" vertex="1" parent="1">
-          <mxGeometry x="900" y="370" width="40" height="20" as="geometry"/>
+        <mxCell id="label_pd" value="1:N" style="text;html=1;strokeColor=none;fillColor=#ede7f6;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#7b1fa2;spacingLeft=5;spacingRight=5;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="200" width="40" height="25" as="geometry"/>
         </mxCell>
 
-        <!-- ============ LEYENDA ============ -->
-        <mxCell id="leyenda" value="LEYENDA" style="shape=table;startSize=35;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="1000" y="80" width="220" height="180" as="geometry"/>
+        <!-- ==================== LEYENDA ==================== -->
+        <mxCell id="leyenda" value="LEYENDA" style="shape=table;startSize=40;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;fillColor=#fafafa;strokeColor=#455a64;strokeWidth=2;fontSize=14;fontColor=#263238;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="400" width="260" height="220" as="geometry"/>
         </mxCell>
-        <mxCell id="leyenda_row1" value="PK = Primary Key" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fillColor=#c8e6c9;" vertex="1" parent="leyenda">
-          <mxGeometry y="35" width="220" height="25" as="geometry"/>
+        <mxCell id="leyenda_header" value="Símbolo" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=center;fontStyle=1;fillColor=#cfd8dc;fontSize=11;" vertex="1" parent="leyenda">
+          <mxGeometry y="40" width="130" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="leyenda_row2" value="FK = Foreign Key" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;fillColor=#e1f5fe;" vertex="1" parent="leyenda">
-          <mxGeometry y="60" width="220" height="25" as="geometry"/>
+        <mxCell id="leyenda_header2" value="Significado" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=center;fontStyle=1;fillColor=#cfd8dc;fontSize=11;" vertex="1" parent="leyenda">
+          <mxGeometry y="40" width="130" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="leyenda_row3" value="NN = Not Null" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="leyenda">
-          <mxGeometry y="85" width="220" height="25" as="geometry"/>
+        <mxCell id="leyenda_row1" value="PK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=center;fillColor=#c8e6c9;fontSize=10;" vertex="1" parent="leyenda">
+          <mxGeometry y="70" width="130" height="25" as="geometry"/>
         </mxCell>
-        <mxCell id="leyenda_row4" value="AI = Auto Increment" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="leyenda">
-          <mxGeometry y="110" width="220" height="25" as="geometry"/>
+        <mxCell id="leyenda_row1desc" value="Primary Key" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=5;fontSize=10;" vertex="1" parent="leyenda">
+          <mxGeometry y="70" width="130" height="25" as="geometry"/>
         </mxCell>
-        <mxCell id="leyenda_row5" value="UNIQUE = Valor Unico" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="leyenda">
-          <mxGeometry y="135" width="220" height="25" as="geometry"/>
+        <mxCell id="leyenda_row2" value="FK" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=center;fillColor=#e1f5fe;fontSize=10;" vertex="1" parent="leyenda">
+          <mxGeometry y="95" width="130" height="25" as="geometry"/>
         </mxCell>
-        <mxCell id="leyenda_row6" value="1:N = Uno a Muchos" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=15;" vertex="1" parent="leyenda">
-          <mxGeometry y="160" width="220" height="25" as="geometry"/>
+        <mxCell id="leyenda_row2desc" value="Foreign Key" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=5;fontSize=10;" vertex="1" parent="leyenda">
+          <mxGeometry y="95" width="130" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="leyenda_row3" value="NN" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=center;fontSize=10;" vertex="1" parent="leyenda">
+          <mxGeometry y="120" width="130" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="leyenda_row3desc" value="Not Null" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=5;fontSize=10;" vertex="1" parent="leyenda">
+          <mxGeometry y="120" width="130" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="leyenda_row4" value="AI" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=center;fontSize=10;" vertex="1" parent="leyenda">
+          <mxGeometry y="145" width="130" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="leyenda_row4desc" value="Auto Increment" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=5;fontSize=10;" vertex="1" parent="leyenda">
+          <mxGeometry y="145" width="130" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="leyenda_row5" value="1:N" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=center;fontSize=10;" vertex="1" parent="leyenda">
+          <mxGeometry y="170" width="130" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="leyenda_row5desc" value="Uno a Muchos" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=5;fontSize=10;" vertex="1" parent="leyenda">
+          <mxGeometry y="170" width="130" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="leyenda_row6" value="1:1" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=center;fontSize=10;" vertex="1" parent="leyenda">
+          <mxGeometry y="195" width="130" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="leyenda_row6desc" value="Uno a Uno" style="shape=column;part=1;collapsible=0;columnHeader=no;html=1;whiteSpace=wrap;align=left;spacingLeft=5;fontSize=10;" vertex="1" parent="leyenda">
+          <mxGeometry y="195" width="130" height="25" as="geometry"/>
         </mxCell>
 
-        <!-- ============ RELACIONES DETALLE ============ -->
-        <mxCell id="relaciones_title" value="RELACIONES" style="text;html=1;strokeColor=none;fillColor=#eceff1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#37474f;" vertex="1" parent="1">
-          <mxGeometry x="1000" y="280" width="220" height="30" as="geometry"/>
+        <!-- ==================== CAJA RELACIONES ==================== -->
+        <mxCell id="relaciones_title" value="RELACIONES" style="text;html=1;strokeColor=none;fillColor=#eceff1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;fontColor=#37474f;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="630" width="260" height="30" as="geometry"/>
         </mxCell>
-
-        <mxCell id="relaciones_box" value="&#xa;1. USUARIOS ↔ AFILIADOS (1:1)&#xa;2. USUARIOS → PROFESIONALES (1:N)&#xa;3. PLANES → AFILIADOS (1:N)&#xa;4. CENTROS → PROFESIONALES (1:N)&#xa;5. CENTROS → CITAS (1:N)&#xa;6. AFILIADOS → CITAS (1:N)&#xa;7. PROFESIONALES → CITAS (1:N)&#xa;8. AFILIADOS → FACTURAS (1:N)&#xa;9. FACTURAS → PAGOS (1:N)&#xa;10. AFILIADOS → HISTORIAL (1:N)&#xa;11. PROFESIONALES → HISTORIAL (1:N)&#xa;12. PROFESIONALES → DISPONIBILIDAD (1:N)&#xa;" style="text;html=1;strokeColor=#90a4ae;fillColor=#fafafa;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=10;spacing=3;spacingTop=5;spacingLeft=10;" vertex="1" parent="1">
-          <mxGeometry x="1000" y="315" width="220" height="240" as="geometry"/>
+        <mxCell id="relaciones_box" value="1.  USUARIOS ↔ AFILIADOS (1:1)&#xa;2.  USUARIOS → PROFESIONALES (1:N)&#xa;3.  PLANES → AFILIADOS (1:N)&#xa;4.  CENTROS → PROFESIONALES (1:N)&#xa;5.  CENTROS → CITAS (1:N)&#xa;6.  AFILIADOS → CITAS (1:N)&#xa;7.  PROFESIONALES → CITAS (1:N)&#xa;8.  AFILIADOS → FACTURAS (1:N)&#xa;9.  FACTURAS → PAGOS (1:N)&#xa;10. AFILIADOS → HISTORIAL (1:N)&#xa;11. PROFESIONALES → HISTORIAL (1:N)&#xa;12. PROFESIONALES → DISPONIBILIDAD (1:N)" style="text;html=1;strokeColor=#90a4ae;fillColor=#fafafa;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;spacing=3;spacingTop=5;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="665" width="260" height="280" as="geometry"/>
         </mxCell>
 
       </root>
