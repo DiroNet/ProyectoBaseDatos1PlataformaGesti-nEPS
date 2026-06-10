@@ -175,6 +175,14 @@
   color: #94A3B8;
 }
 
+.help-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #64748B;
+  font-style: italic;
+}
+
 .btn-auth {
   width: 100%;
   padding: 14px;

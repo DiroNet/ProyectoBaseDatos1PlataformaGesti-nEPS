@@ -45,10 +45,11 @@ class Afiliado(db.Model):
     __tablename__ = 'afiliados'
     
     id_afiliado = db.Column(db.Integer, primary_key=True)
-    id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id_usuario'), nullable=False)
+    id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id_usuario'), nullable=False, unique=True)
+    tipo_documento = db.Column(db.String(20))
     documento = db.Column(db.String(20))
     fecha_nacimiento = db.Column(db.Date)
-    telefono = db.Column(db.String(20))
+    telefono = db.Column(db.String(20), unique=True)
     direccion = db.Column(db.String(150))
     id_plan = db.Column(db.Integer, db.ForeignKey('planes.id_plan'))
     
@@ -62,6 +63,7 @@ class Afiliado(db.Model):
         return {
             'id_afiliado': self.id_afiliado,
             'id_usuario': self.id_usuario,
+            'tipo_documento': self.tipo_documento,
             'documento': self.documento,
             'fecha_nacimiento': str(self.fecha_nacimiento) if self.fecha_nacimiento else None,
             'telefono': self.telefono,

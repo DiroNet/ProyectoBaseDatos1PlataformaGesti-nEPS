@@ -501,6 +501,15 @@ def delete_afiliado(afiliado_id):
     afiliado = Afiliado.query.get_or_404(afiliado_id)
     usuario_afiliado = Usuario.query.get(afiliado.id_usuario)
 
+    from models import Factura, Cita, HistorialClinico, Pago
+
+    facturas = Factura.query.filter_by(id_afiliado=afiliado_id).all()
+    for factura in facturas:
+        Pago.query.filter_by(id_factura=factura.id_factura).delete()
+    Factura.query.filter_by(id_afiliado=afiliado_id).delete()
+    Cita.query.filter_by(id_afiliado=afiliado_id).delete()
+    HistorialClinico.query.filter_by(id_afiliado=afiliado_id).delete()
+
     db.session.delete(afiliado)
     if usuario_afiliado:
         db.session.delete(usuario_afiliado)

@@ -55,18 +55,30 @@
         </div>
 
         <div class="form-group">
-          <label>Numero de Cedula</label>
-          <input type="number" [(ngModel)]="documento" name="documento"
-                 placeholder="12345678" required pattern="[0-9]{6,10}" inputmode="numeric"
-                 title="Cédula colombiana - entre 6 y 10 dígitos" 
-                 maxlength="10" (input)="filtrarDocumento($event)" (keydown)="preventNonNumeric($event)">
+          <label>Tipo de Documento <span style="color: red;">*</span></label>
+          <select [(ngModel)]="tipoDocumento" name="tipoDocumento" required (change)="actualizarLimitesFechaNacimiento()">
+            <option value="">-- Seleccionar --</option>
+            <option value="CC">Cédula de Ciudadanía (CC)</option>
+            <option value="TI">Tarjeta de Identidad (TI)</option>
+            <option value="RC">Registro Civil de Nacimiento (RC)</option>
+          </select>
         </div>
 
         <div class="form-group">
-          <label>Fecha de Nacimiento</label>
+          <label>Número de Documento</label>
+          <input type="text" [(ngModel)]="documento" name="documento"
+                 placeholder="12345678" required
+                 title="Número del documento seleccionado" 
+                 maxlength="15" (input)="filtrarDocumento($event)">
+        </div>
+
+        <div class="form-group">
+          <label>Fecha de Nacimiento <span style="color: red;">*</span></label>
           <input type="date" [(ngModel)]="fechaNacimiento" name="fechaNacimiento"
-                 [max]="maxFecha" required
-                 title="La fecha de nacimiento no puede ser futura">
+                 [max]="maxFechaNacimiento" [min]="minFechaNacimiento" required
+                 [title]="mensajeFechaNacimiento"
+                 (change)="onFechaNacimientoChange()">
+          <small *ngIf="mensajeFechaNacimiento" class="help-text">{{ mensajeFechaNacimiento }}</small>
         </div>
 
         <div class="form-group">
@@ -76,8 +88,8 @@
         </div>
 
         <div class="form-group">
-          <label>Plan de Salud</label>
-          <select [(ngModel)]="id_plan" name="plan">
+          <label>Plan de Salud <span style="color: red;">*</span></label>
+          <select [(ngModel)]="id_plan" name="plan" required>
             <option [ngValue]="null">-- Seleccionar --</option>
             <option *ngFor="let p of planes" [value]="p.id_plan">{{ p.nombre }} - ${{ p.costo }}</option>
           </select>

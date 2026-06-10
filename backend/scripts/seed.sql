@@ -1,14 +1,14 @@
 -- ========================================
 -- SEED DATA - Sistema EPS Bienestar
 -- MySQL Version
--- Ejecutar después de crear las tablas
+-- Password para todos: admin123
 -- ========================================
 
 INSERT IGNORE INTO usuarios (email, password, nombre, rol) VALUES
-('admin@eps.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYfQ3Z5kK7e', 'Administrador', 'ADMIN'),
-('afiliado@test.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYfQ3Z5kK7e', 'Juan Pérez', 'AFILIADO'),
-('profesional@test.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYfQ3Z5kK7e', 'Dra. María García', 'PROFESIONAL'),
-('drlorenzo@test.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYfQ3Z5kK7e', 'Dr. Carlos Lorenzo', 'PROFESIONAL');
+('admin@eps.com', '$2b$12$T9NP9i8aOjgbTFwB5NL4BejLW420nGwo/LIC./2iAEFm9xxKRJ8w.', 'Administrador', 'ADMIN'),
+('afiliado@test.com', '$2b$12$T9NP9i8aOjgbTFwB5NL4BejLW420nGwo/LIC./2iAEFm9xxKRJ8w.', 'Juan Pérez', 'AFILIADO'),
+('profesional@test.com', '$2b$12$T9NP9i8aOjgbTFwB5NL4BejLW420nGwo/LIC./2iAEFm9xxKRJ8w.', 'Dra. María García', 'PROFESIONAL'),
+('drlorenzo@test.com', '$2b$12$T9NP9i8aOjgbTFwB5NL4BejLW420nGwo/LIC./2iAEFm9xxKRJ8w.', 'Dr. Carlos Lorenzo', 'PROFESIONAL');
 
 INSERT IGNORE INTO afiliados (id_usuario, documento, telefono, direccion, id_plan)
 SELECT id_usuario, '12345678', '3001234567', 'Calle 123, Ciudad', 1
