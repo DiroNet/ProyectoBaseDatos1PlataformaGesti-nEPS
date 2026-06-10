@@ -27,6 +27,8 @@ export class DashboardAfiliadoComponent implements OnInit, OnDestroy {
 
   disponibilidad: any[] = [];
   horasDisponibles: string[] = [];
+  todasLasHoras: string[] = [];
+  profesionalesFiltrados: any[] = [];
 
   nuevaCita: any = { id_profesional: '', id_centro: '', fecha: '', hora: '' };
   minDate = new Date().toISOString().split('T')[0];
@@ -158,36 +160,62 @@ export class DashboardAfiliadoComponent implements OnInit, OnDestroy {
     });
   }
 
+  onCentroChange(): void {
+    this.nuevaCita.id_profesional = '';
+    this.disponibilidad = [];
+    this.horasDisponibles = [];
+    this.nuevaCita.hora = '';
+    this.profesionalesFiltrados = this.nuevaCita.id_centro
+      ? this.profesionales.filter(p => p.id_centro == this.nuevaCita.id_centro)
+      : [];
+  }
+
   onProfesionalChange(): void {
     if (this.nuevaCita.id_profesional) {
       this.api.getDisponibilidad(this.nuevaCita.id_profesional).subscribe({
         next: (data: any) => {
           this.disponibilidad = data;
-          this.horasDisponibles = this.generarHorasDisponibles(data);
+          this.todasLasHoras = this.generarHorasDisponibles(data);
+          this.horasDisponibles = this.filtrarHorasPorFecha(this.todasLasHoras);
         },
         error: (err: any) => {
           console.error(err);
           this.disponibilidad = [];
+          this.todasLasHoras = [];
           this.horasDisponibles = [];
         }
       });
     } else {
       this.disponibilidad = [];
+      this.todasLasHoras = [];
       this.horasDisponibles = [];
     }
     this.nuevaCita.hora = '';
   }
 
+  onFechaChange(): void {
+    this.horasDisponibles = this.filtrarHorasPorFecha(this.todasLasHoras);
+    this.nuevaCita.hora = '';
+  }
+
+  filtrarHorasPorFecha(horas: string[]): string[] {
+    const hoy = new Date().toISOString().split('T')[0];
+    if (this.nuevaCita.fecha !== hoy) return horas;
+    const ahora = new Date();
+    const minutosAhora = ahora.getHours() * 60 + ahora.getMinutes();
+    return horas.filter(h => this.horaToMinutes(h) > minutosAhora);
+  }
+
   generarHorasDisponibles(disp: any[]): string[] {
-    const horas: string[] = [];
+    const horasSet = new Set<string>();
     disp.forEach(d => {
       const inicio = this.horaToMinutes(d.hora_inicio);
       const fin = this.horaToMinutes(d.hora_fin);
       for (let m = inicio; m < fin; m += 60) {
-        horas.push(this.minutesToTime(m));
+        horasSet.add(this.minutesToTime(m));
       }
     });
-    return horas.sort();
+    return Array.from(horasSet).sort();
   }
 
   horaToMinutes(hora: string): number {
@@ -220,7 +248,9 @@ export class DashboardAfiliadoComponent implements OnInit, OnDestroy {
         this.loading = false;
         this.nuevaCita = { id_profesional: '', id_centro: '', fecha: '', hora: '' };
         this.disponibilidad = [];
+        this.todasLasHoras = [];
         this.horasDisponibles = [];
+        this.profesionalesFiltrados = [];
         this.loadCitas();
         this.activeTab = 'citas';
       },
@@ -228,6 +258,23 @@ export class DashboardAfiliadoComponent implements OnInit, OnDestroy {
         this.notification.error(err.error?.error || 'Error al agendar cita');
         this.loading = false;
       }
+    });
+  }
+
+  pagarFactura(factura: any): void {
+    this.notification.confirm('¿Confirmar pago de $' + factura.total + '?', () => {
+      this.loading = true;
+      this.api.pagarFactura(factura.id_factura, 'Efectivo').subscribe({
+        next: () => {
+          this.notification.success('Factura pagada exitosamente');
+          this.loading = false;
+          this.loadFacturas();
+        },
+        error: (err: any) => {
+          this.notification.error(err.error?.error || 'Error al pagar');
+          this.loading = false;
+        }
+      });
     });
   }
 

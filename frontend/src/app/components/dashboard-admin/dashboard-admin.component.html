@@ -698,14 +698,28 @@
             <tr *ngFor="let f of facturas">
               <td>{{ f.fecha | date:'mediumDate' }}</td>
               <td>{{ f.afiliado?.usuario?.nombre }}</td>
-              <td>${{ f.total | number }}</td>
+              <td>
+                <ng-container *ngIf="facturaEditando?.id_factura !== f.id_factura">
+                  ${{ f.total | number }}
+                </ng-container>
+                <ng-container *ngIf="facturaEditando?.id_factura === f.id_factura">
+                  <input type="number" [(ngModel)]="facturaEditando.total" style="width:100px">
+                </ng-container>
+              </td>
               <td>
                 <span class="badge" [class]="f.estado.toLowerCase()">{{ f.estado }}</span>
               </td>
               <td>
-                <span *ngIf="f.estado === 'PENDIENTE'" (click)="pagarFactura(f)" class="btn-small">Pagar</span>
-                <span *ngIf="f.estado === 'PAGADA'" class="badge pagada">Pagada</span>
-                <button (click)="eliminarFactura(f.id_factura)" class="btn-small btn-danger">Eliminar</button>
+                <div class="action-btns">
+                  <ng-container *ngIf="facturaEditando?.id_factura !== f.id_factura">
+                    <button (click)="editarFactura(f)" class="btn-icon btn-edit" [disabled]="f.estado === 'PAGADA'" title="Editar">✏️</button>
+                    <button (click)="eliminarFactura(f.id_factura)" class="btn-icon btn-del" title="Eliminar">🗑️</button>
+                  </ng-container>
+                  <ng-container *ngIf="facturaEditando?.id_factura === f.id_factura">
+                    <button (click)="guardarEdicionFactura()" [disabled]="loading" class="btn-icon" style="background:#dcfce7;color:#15803d" title="Guardar">✔</button>
+                    <button (click)="cancelarEdicionFactura()" class="btn-icon" style="background:#f1f5f9;color:#475569" title="Cancelar">✕</button>
+                  </ng-container>
+                </div>
               </td>
             </tr>
           </tbody>

@@ -181,6 +181,10 @@ export class ApiService {
     return this.http.post(this.apiUrl + '/facturas/' + id + '/pagar', { metodo_pago: metodoPago }, { headers: this.getHeaders() });
   }
 
+  updateFactura(id: number, data: any): any {
+    return this.http.put(this.apiUrl + '/facturas/' + id, data, { headers: this.getHeaders() });
+  }
+
   deleteFactura(id: number): any {
     return this.http.delete(this.apiUrl + '/facturas/' + id, { headers: this.getHeaders() });
   }
@@ -195,6 +199,10 @@ export class ApiService {
 
   createHistorial(data: any): any {
     return this.http.post(this.apiUrl + '/historial', data, { headers: this.getHeaders() });
+  }
+
+  updateHistorial(id: number, data: any): any {
+    return this.http.put(this.apiUrl + '/historial/' + id, data, { headers: this.getHeaders() });
   }
 
   getCitasProximas(): any {

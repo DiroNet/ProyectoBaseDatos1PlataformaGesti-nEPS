@@ -26,6 +26,7 @@ export class DashboardProfesionalComponent implements OnInit, OnDestroy {
 
   nuevoHistorial: any = { id_afiliado: '', diagnostico: '', tratamiento: '', id_cita: '' };
   afiliados: any[] = [];
+  historialEditando: any = null;
 
   nuevaDisp: any = { dia_semana: 1, hora_inicio: '08:00', hora_fin: '17:00' };
 
@@ -62,7 +63,7 @@ export class DashboardProfesionalComponent implements OnInit, OnDestroy {
     this.initialLoading = true;
     Promise.all([
       this.loadCitasPromise(),
-      this.loadAfiliadosPromise()
+      this.loadHistorialPromise()
     ]).then(() => {
       this.loadProfesionalId();
     }).catch(() => {
@@ -70,19 +71,24 @@ export class DashboardProfesionalComponent implements OnInit, OnDestroy {
     });
   }
 
+  deriveAfiliadosFromCitas(): void {
+    const seen = new Set<number>();
+    this.afiliados = this.citas
+      .filter(c => c.afiliado && c.estado === 'CONFIRMADA' && !seen.has(c.afiliado.id_afiliado) && seen.add(c.afiliado.id_afiliado))
+      .map(c => c.afiliado);
+  }
+
+  onAfiliadoAtenderChange(): void {
+    const cita = this.citas.find(
+      c => c.estado === 'CONFIRMADA' && c.afiliado?.id_afiliado == this.nuevoHistorial.id_afiliado
+    );
+    this.nuevoHistorial.id_cita = cita ? cita.id_cita : '';
+  }
+
   loadCitasPromise(): Promise<void> {
     return new Promise((resolve) => {
       this.api.getCitas().subscribe({
-        next: (data: any) => { this.citas = data; resolve(); },
-        error: () => resolve()
-      });
-    });
-  }
-
-  loadAfiliadosPromise(): Promise<void> {
-    return new Promise((resolve) => {
-      this.api.getAfiliados().subscribe({
-        next: (data: any) => { this.afiliados = data; resolve(); },
+        next: (data: any) => { this.citas = data; this.deriveAfiliadosFromCitas(); resolve(); },
         error: () => resolve()
       });
     });
@@ -116,14 +122,14 @@ export class DashboardProfesionalComponent implements OnInit, OnDestroy {
 
   loadCitas(): void {
     this.api.getCitas().subscribe({
-      next: (data: any) => this.citas = data,
+      next: (data: any) => { this.citas = data; this.deriveAfiliadosFromCitas(); },
       error: (err: any) => console.error(err)
     });
   }
 
   loadCitasSilent(): void {
     this.api.getCitas().subscribe({
-      next: (data: any) => this.citas = data,
+      next: (data: any) => { this.citas = data; this.deriveAfiliadosFromCitas(); },
       error: () => {}
     });
   }
@@ -131,13 +137,6 @@ export class DashboardProfesionalComponent implements OnInit, OnDestroy {
   loadHistorial(): void {
     this.api.getHistorial().subscribe({
       next: (data: any) => this.historial = data,
-      error: (err: any) => console.error(err)
-    });
-  }
-
-  loadAfiliados(): void {
-    this.api.getAfiliados().subscribe({
-      next: (data: any) => this.afiliados = data,
       error: (err: any) => console.error(err)
     });
   }
@@ -233,6 +232,37 @@ export class DashboardProfesionalComponent implements OnInit, OnDestroy {
       },
       error: (err: any) => {
         this.notification.error(err.error?.error || 'Error al registrar');
+        this.loading = false;
+      }
+    });
+  }
+
+  editarHistorial(h: any): void {
+    this.historialEditando = { id_historial: h.id_historial, diagnostico: h.diagnostico, tratamiento: h.tratamiento };
+  }
+
+  cancelarEdicionHistorial(): void {
+    this.historialEditando = null;
+  }
+
+  guardarEdicionHistorial(): void {
+    if (!this.historialEditando.diagnostico) {
+      this.notification.error('El diagnóstico es requerido');
+      return;
+    }
+    this.loading = true;
+    this.api.updateHistorial(this.historialEditando.id_historial, {
+      diagnostico: this.historialEditando.diagnostico,
+      tratamiento: this.historialEditando.tratamiento
+    }).subscribe({
+      next: () => {
+        this.notification.success('Historial actualizado');
+        this.loading = false;
+        this.historialEditando = null;
+        this.loadHistorial();
+      },
+      error: (err: any) => {
+        this.notification.error(err.error?.error || 'Error al actualizar');
         this.loading = false;
       }
     });

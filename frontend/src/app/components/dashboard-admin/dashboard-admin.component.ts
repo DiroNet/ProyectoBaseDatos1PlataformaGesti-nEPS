@@ -57,6 +57,7 @@ export class DashboardAdminComponent implements OnInit, AfterViewInit, OnDestroy
   nuevoProfesional: any = { email: '', password: '', nombre: '', especialidad: '', id_centro: null };
   nuevoCentro: any = { nombre: '', direccion: '', ciudad: '' };
   nuevaFactura: any = { id_afiliado: '', total: 0 };
+  facturaEditando: any = null;
   nuevoPlan: any = { nombre: '', descripcion: '', costo: 0 };
   editandoPlan = false;
   editandoCentro = false;
@@ -675,6 +676,34 @@ export class DashboardAdminComponent implements OnInit, AfterViewInit, OnDestroy
         this.loadData();
       },
       error: (err: any) => this.notification.error(err.error?.error || 'Error')
+    });
+  }
+
+  editarFactura(f: any): void {
+    this.facturaEditando = { id_factura: f.id_factura, total: f.total };
+  }
+
+  cancelarEdicionFactura(): void {
+    this.facturaEditando = null;
+  }
+
+  guardarEdicionFactura(): void {
+    if (!this.facturaEditando.total || this.facturaEditando.total <= 0) {
+      this.notification.error('Total inválido');
+      return;
+    }
+    this.loading = true;
+    this.api.updateFactura(this.facturaEditando.id_factura, { total: this.facturaEditando.total }).subscribe({
+      next: () => {
+        this.notification.success('Factura actualizada');
+        this.loading = false;
+        this.facturaEditando = null;
+        this.loadData();
+      },
+      error: (err: any) => {
+        this.notification.error(err.error?.error || 'Error al actualizar');
+        this.loading = false;
+      }
     });
   }
 

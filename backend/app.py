@@ -862,7 +862,23 @@ def create_cita():
     
     if fecha_cita < datetime.now():
         return jsonify({'error': 'No se pueden agendar citas en fechas pasadas'}), 400
-    
+
+    conflicto_profesional = Cita.query.filter_by(
+        id_profesional=data['id_profesional'],
+        id_centro=data['id_centro'],
+        fecha=fecha_cita
+    ).filter(Cita.estado.in_(['PENDIENTE', 'CONFIRMADA'])).first()
+    if conflicto_profesional:
+        return jsonify({'error': 'El profesional ya tiene una cita agendada en esa fecha y hora'}), 409
+
+    conflicto_afiliado = Cita.query.filter_by(
+        id_afiliado=afiliado.id_afiliado,
+        id_profesional=data['id_profesional'],
+        fecha=fecha_cita
+    ).filter(Cita.estado.in_(['PENDIENTE', 'CONFIRMADA'])).first()
+    if conflicto_afiliado:
+        return jsonify({'error': 'Ya tienes una cita con este profesional en esa fecha y hora'}), 409
+
     cita = Cita(
         id_afiliado=afiliado.id_afiliado,
         id_profesional=data['id_profesional'],
@@ -975,6 +991,20 @@ def create_factura():
     
     return jsonify(factura.to_dict()), 201
 
+@app.route('/api/facturas/<int:factura_id>', methods=['PUT'])
+@jwt_required()
+def update_factura(factura_id):
+    current_id = int(get_jwt_identity())
+    usuario = db.session.get(Usuario, current_id)
+    if usuario.rol != 'ADMIN':
+        return jsonify({'error': 'No autorizado'}), 403
+    factura = db.session.get(Factura, factura_id) or abort(404)
+    data = request.get_json() or {}
+    if 'total' in data:
+        factura.total = data['total']
+    db.session.commit()
+    return jsonify(factura.to_dict()), 200
+
 @app.route('/api/facturas/<int:factura_id>', methods=['DELETE'])
 @jwt_required()
 def delete_factura(factura_id):
@@ -997,11 +1027,18 @@ def pagar_factura(factura_id):
     usuario = db.session.get(Usuario, current_id)
     factura = db.session.get(Factura, factura_id) or abort(404)
     
-    if usuario.rol != 'ADMIN':
+    if usuario.rol == 'AFILIADO':
+        afiliado = Afiliado.query.filter_by(id_usuario=current_id).first()
+        if not afiliado or factura.id_afiliado != afiliado.id_afiliado:
+            return jsonify({'error': 'No autorizado'}), 403
+    elif usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
-    
-    data = request.get_json()
-    
+
+    if factura.estado == 'PAGADA':
+        return jsonify({'error': 'La factura ya está pagada'}), 409
+
+    data = request.get_json() or {}
+
     pago = Pago(
         id_factura=factura_id,
         fecha=datetime.now().date(),
@@ -1011,7 +1048,7 @@ def pagar_factura(factura_id):
     db.session.add(pago)
     factura.estado = 'PAGADA'
     db.session.commit()
-    
+
     return jsonify(factura.to_dict()), 200
 
 @app.route('/api/pagos', methods=['GET'])
@@ -1061,9 +1098,19 @@ def create_historial():
     
     data = request.get_json()
     
-    if not data.get('id_afiliado') or not data.get('diagnostico'):
-        return jsonify({'error': 'Campos requeridos'}), 400
-    
+    if not data.get('id_afiliado') or not data.get('diagnostico') or not data.get('id_cita'):
+        return jsonify({'error': 'Campos requeridos: afiliado, diagnóstico y cita'}), 400
+
+    cita = db.session.get(Cita, data['id_cita'])
+    if not cita:
+        return jsonify({'error': 'Cita no encontrada'}), 404
+    if cita.id_profesional != profesional.id_profesional:
+        return jsonify({'error': 'La cita no pertenece a este profesional'}), 403
+    if cita.id_afiliado != int(data['id_afiliado']):
+        return jsonify({'error': 'La cita no corresponde al afiliado seleccionado'}), 403
+    if cita.estado != 'CONFIRMADA':
+        return jsonify({'error': 'Solo se puede registrar atención para citas CONFIRMADAS'}), 409
+
     historial = HistorialClinico(
         id_afiliado=data['id_afiliado'],
         id_profesional=profesional.id_profesional,
@@ -1072,15 +1119,31 @@ def create_historial():
         tratamiento=data.get('tratamiento', '')
     )
     db.session.add(historial)
-    
-    if data.get('id_cita'):
-        cita = db.session.get(Cita, data['id_cita'])
-        if cita:
-            cita.estado = 'FINALIZADA'
-    
+    cita.estado = 'FINALIZADA'
     db.session.commit()
     
     return jsonify(historial.to_dict()), 201
+
+@app.route('/api/historial/<int:historial_id>', methods=['PUT'])
+@jwt_required()
+def update_historial(historial_id):
+    current_id = int(get_jwt_identity())
+    usuario = db.session.get(Usuario, current_id)
+    if usuario.rol != 'PROFESIONAL':
+        return jsonify({'error': 'No autorizado'}), 403
+    profesional = Profesional.query.filter_by(id_usuario=current_id).first()
+    if not profesional:
+        return jsonify({'error': 'Profesional no encontrado'}), 404
+    h = db.session.get(HistorialClinico, historial_id) or abort(404)
+    if h.id_profesional != profesional.id_profesional:
+        return jsonify({'error': 'No autorizado'}), 403
+    data = request.get_json() or {}
+    if 'diagnostico' in data:
+        h.diagnostico = data['diagnostico']
+    if 'tratamiento' in data:
+        h.tratamiento = data['tratamiento']
+    db.session.commit()
+    return jsonify(h.to_dict()), 200
 
 @app.route('/api/consultas/afiliados-facturas-pendientes', methods=['GET'])
 @jwt_required()

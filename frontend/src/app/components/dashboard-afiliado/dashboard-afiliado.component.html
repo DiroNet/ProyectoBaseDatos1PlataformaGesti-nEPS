@@ -57,18 +57,8 @@
       <h2>Agendar Nueva Cita</h2>
       <form (ngSubmit)="agendarCita()" class="form-container">
         <div class="form-group">
-          <label>Seleccionar Profesional</label>
-          <select [(ngModel)]="nuevaCita.id_profesional" name="profesional" (change)="onProfesionalChange()" required>
-            <option value="">-- Seleccionar --</option>
-            <option *ngFor="let prof of profesionales" [value]="prof.id_profesional">
-              {{ prof.usuario?.nombre }} - {{ prof.especialidad }}
-            </option>
-          </select>
-        </div>
-
-        <div class="form-group">
           <label>Centro de Salud</label>
-          <select [(ngModel)]="nuevaCita.id_centro" name="centro" required>
+          <select [(ngModel)]="nuevaCita.id_centro" name="centro" (change)="onCentroChange()" required>
             <option value="">-- Seleccionar --</option>
             <option *ngFor="let centro of centros" [value]="centro.id_centro">
               {{ centro.nombre }} - {{ centro.ciudad }}
@@ -77,8 +67,21 @@
         </div>
 
         <div class="form-group">
+          <label>Seleccionar Profesional</label>
+          <select [(ngModel)]="nuevaCita.id_profesional" name="profesional" (change)="onProfesionalChange()" required [disabled]="!nuevaCita.id_centro">
+            <option value="">-- Seleccionar --</option>
+            <option *ngFor="let prof of profesionalesFiltrados" [value]="prof.id_profesional">
+              {{ prof.usuario?.nombre }} - {{ prof.especialidad }}
+            </option>
+          </select>
+          <small *ngIf="nuevaCita.id_centro && profesionalesFiltrados.length === 0" style="color: #64748B;">
+            No hay profesionales en este centro
+          </small>
+        </div>
+
+        <div class="form-group">
           <label>Fecha de la Cita</label>
-          <input type="date" [(ngModel)]="nuevaCita.fecha" name="fecha" [min]="minDate" required>
+          <input type="date" [(ngModel)]="nuevaCita.fecha" name="fecha" [min]="minDate" (change)="onFechaChange()" required>
         </div>
 
         <div class="form-group">
@@ -142,6 +145,9 @@
           </div>
           <div class="card-body">
             <p><strong>Total:</strong> ${{ f.total | number }}</p>
+          </div>
+          <div class="card-footer" *ngIf="f.estado === 'PENDIENTE'">
+            <button (click)="pagarFactura(f)" class="btn-primary" [disabled]="loading">Pagar</button>
           </div>
         </div>
       </div>

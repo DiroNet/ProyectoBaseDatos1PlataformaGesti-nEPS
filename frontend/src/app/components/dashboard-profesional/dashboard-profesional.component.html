@@ -58,7 +58,7 @@
       <form (ngSubmit)="registrarHistorial()" class="form-container">
         <div class="form-group">
           <label>Afiliado</label>
-          <select [(ngModel)]="nuevoHistorial.id_afiliado" name="afiliado" required>
+          <select [(ngModel)]="nuevoHistorial.id_afiliado" name="afiliado" (change)="onAfiliadoAtenderChange()" required>
             <option value="">-- Seleccionar --</option>
             <option *ngFor="let af of afiliados" [value]="af.id_afiliado">
               {{ af.usuario?.nombre }} - {{ af.documento }}
@@ -140,14 +140,37 @@
       </div>
       <div class="cards-grid">
         <div *ngFor="let h of historial" class="card">
-          <div class="card-header">
-            <span class="date">{{ h.fecha | date:'mediumDate' }}</span>
-          </div>
-          <div class="card-body">
-            <p><strong>Afiliado:</strong> {{ h.afiliado?.usuario?.nombre }}</p>
-            <p><strong>Diagnóstico:</strong> {{ h.diagnostico }}</p>
-            <p *ngIf="h.tratamiento"><strong>Tratamiento:</strong> {{ h.tratamiento }}</p>
-          </div>
+          <ng-container *ngIf="historialEditando?.id_historial !== h.id_historial">
+            <div class="card-header">
+              <span class="date">{{ h.fecha | date:'mediumDate' }}</span>
+              <button (click)="editarHistorial(h)" class="btn-icon btn-edit" title="Editar">✏️</button>
+            </div>
+            <div class="card-body">
+              <p><strong>Afiliado:</strong> {{ h.afiliado?.usuario?.nombre }}</p>
+              <p><strong>Diagnóstico:</strong> {{ h.diagnostico }}</p>
+              <p *ngIf="h.tratamiento"><strong>Tratamiento:</strong> {{ h.tratamiento }}</p>
+            </div>
+          </ng-container>
+          <ng-container *ngIf="historialEditando?.id_historial === h.id_historial">
+            <div class="card-header">
+              <span class="date">{{ h.fecha | date:'mediumDate' }} — <strong>{{ h.afiliado?.usuario?.nombre }}</strong></span>
+            </div>
+            <div class="edit-form">
+              <div>
+                <label>Diagnóstico</label>
+                <textarea [(ngModel)]="historialEditando.diagnostico" rows="3"></textarea>
+              </div>
+              <div>
+                <label>Tratamiento</label>
+                <textarea [(ngModel)]="historialEditando.tratamiento" rows="3"></textarea>
+              </div>
+            </div>
+            <div class="card-footer">
+              <button (click)="guardarEdicionHistorial()" [disabled]="loading" class="btn-icon btn-save" title="Guardar">✔</button>
+              <button (click)="cancelarEdicionHistorial()" class="btn-icon btn-cancel" title="Cancelar">✕</button>
+              <span style="font-size:12px;color:#64748B;margin-left:4px">{{ loading ? 'Guardando...' : '' }}</span>
+            </div>
+          </ng-container>
         </div>
       </div>
     </section>
