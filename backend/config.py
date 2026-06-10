@@ -17,7 +17,7 @@ class Config:
         'pool_pre_ping': True
     }
     
-    # JWT Configuration
+    # JWT Configuration // encriptar
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key-eps-bienestar-2026-secure-token'
     JWT_ACCESS_TOKEN_EXPIRES = 86400
 
