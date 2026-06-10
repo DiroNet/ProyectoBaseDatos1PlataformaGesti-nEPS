@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, abort
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from flask_bcrypt import Bcrypt
@@ -240,6 +240,7 @@ def register():
             id_usuario=usuario.id_usuario,
             tipo_documento=data.get('tipo_documento', ''),
             documento=data.get('documento', ''),
+            fecha_nacimiento=data.get('fecha_nacimiento') or None,
             telefono=data.get('telefono', ''),
             direccion=data.get('direccion', ''),
             id_plan=data.get('id_plan')
@@ -280,7 +281,7 @@ def login():
 @jwt_required()
 def get_usuarios():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
@@ -291,15 +292,15 @@ def get_usuarios():
 @app.route('/api/usuarios/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_usuario(user_id):
-    usuario = Usuario.query.get_or_404(user_id)
+    usuario = db.session.get(Usuario, user_id) or abort(404)
     return jsonify(usuario.to_dict()), 200
 
 @app.route('/api/usuarios/<int:user_id>', methods=['PUT'])
 @jwt_required()
 def update_usuario(user_id):
     current_id = int(get_jwt_identity())
-    usuario_actual = Usuario.query.get(current_id)
-    usuario = Usuario.query.get_or_404(user_id)
+    usuario_actual = db.session.get(Usuario, current_id)
+    usuario = db.session.get(Usuario, user_id) or abort(404)
     
     if usuario.id_usuario != current_id and usuario_actual.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
@@ -320,7 +321,7 @@ def update_usuario(user_id):
 @jwt_required()
 def delete_usuario(user_id):
     current_id = int(get_jwt_identity())
-    usuario_actual = Usuario.query.get(current_id)
+    usuario_actual = db.session.get(Usuario, current_id)
     
     if usuario_actual.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
@@ -328,7 +329,7 @@ def delete_usuario(user_id):
     if usuario_actual.id_usuario == user_id:
         return jsonify({'error': 'No puedes eliminar tu propia cuenta'}), 400
     
-    usuario = Usuario.query.get_or_404(user_id)
+    usuario = db.session.get(Usuario, user_id) or abort(404)
     
     afiliado = Afiliado.query.filter_by(id_usuario=user_id).first()
     if afiliado:
@@ -352,7 +353,7 @@ def delete_usuario(user_id):
 @jwt_required()
 def get_afiliados():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol == 'AFILIADO':
         afiliado = Afiliado.query.filter_by(id_usuario=current_id).first()
@@ -365,14 +366,14 @@ def get_afiliados():
 @app.route('/api/afiliados/<int:afiliado_id>', methods=['GET'])
 @jwt_required()
 def get_afiliado(afiliado_id):
-    afiliado = Afiliado.query.get_or_404(afiliado_id)
+    afiliado = db.session.get(Afiliado, afiliado_id) or abort(404)
     return jsonify(afiliado.to_dict()), 200
 
 @app.route('/api/afiliados', methods=['POST'])
 @jwt_required()
 def create_afiliado():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
@@ -458,15 +459,15 @@ def create_afiliado():
 @jwt_required()
 def update_afiliado(afiliado_id):
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
-    afiliado = Afiliado.query.get_or_404(afiliado_id)
+    usuario = db.session.get(Usuario, current_id)
+    afiliado = db.session.get(Afiliado, afiliado_id) or abort(404)
     
     if afiliado.id_usuario != current_id and usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
     
     data = request.get_json()
     
-    usuario_afiliado = Usuario.query.get(afiliado.id_usuario)
+    usuario_afiliado = db.session.get(Usuario, afiliado.id_usuario)
     if data.get('nombre') and usuario_afiliado:
         usuario_afiliado.nombre = data['nombre']
     if 'documento' in data:
@@ -493,13 +494,13 @@ def update_afiliado(afiliado_id):
 @jwt_required()
 def delete_afiliado(afiliado_id):
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
 
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
 
-    afiliado = Afiliado.query.get_or_404(afiliado_id)
-    usuario_afiliado = Usuario.query.get(afiliado.id_usuario)
+    afiliado = db.session.get(Afiliado, afiliado_id) or abort(404)
+    usuario_afiliado = db.session.get(Usuario, afiliado.id_usuario)
 
     from models import Factura, Cita, HistorialClinico, Pago
 
@@ -525,14 +526,14 @@ def get_profesionales():
 @app.route('/api/profesionales/<int:profesional_id>', methods=['GET'])
 @jwt_required()
 def get_profesional(profesional_id):
-    profesional = Profesional.query.get_or_404(profesional_id)
+    profesional = db.session.get(Profesional, profesional_id) or abort(404)
     return jsonify(profesional.to_dict()), 200
 
 @app.route('/api/profesionales', methods=['POST'])
 @jwt_required()
 def create_profesional():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
@@ -574,15 +575,15 @@ def create_profesional():
 @jwt_required()
 def update_profesional(profesional_id):
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
-    profesional = Profesional.query.get_or_404(profesional_id)
+    usuario = db.session.get(Usuario, current_id)
+    profesional = db.session.get(Profesional, profesional_id) or abort(404)
     
     if profesional.id_usuario != current_id and usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
     
     data = request.get_json()
     
-    usuario_prof = Usuario.query.get(profesional.id_usuario)
+    usuario_prof = db.session.get(Usuario, profesional.id_usuario)
     if data.get('nombre') and usuario_prof:
         usuario_prof.nombre = data['nombre']
     if 'especialidad' in data:
@@ -597,13 +598,13 @@ def update_profesional(profesional_id):
 @jwt_required()
 def delete_profesional(profesional_id):
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
 
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
 
-    profesional = Profesional.query.get_or_404(profesional_id)
-    usuario_prof = Usuario.query.get(profesional.id_usuario)
+    profesional = db.session.get(Profesional, profesional_id) or abort(404)
+    usuario_prof = db.session.get(Usuario, profesional.id_usuario)
 
     db.session.delete(profesional)
     if usuario_prof:
@@ -624,7 +625,7 @@ def get_disponibilidad_profesional(profesional_id):
 @jwt_required()
 def create_disponibilidad():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
 
     if usuario.rol != 'ADMIN' and usuario.rol != 'PROFESIONAL':
         return jsonify({'error': 'No autorizado'}), 403
@@ -650,12 +651,12 @@ def create_disponibilidad():
 @jwt_required()
 def delete_disponibilidad(disp_id):
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
 
     if usuario.rol != 'ADMIN' and usuario.rol != 'PROFESIONAL':
         return jsonify({'error': 'No autorizado'}), 403
 
-    disp = DisponibilidadProfesional.query.get_or_404(disp_id)
+    disp = db.session.get(DisponibilidadProfesional, disp_id) or abort(404)
     disp.activo = False
     db.session.commit()
 
@@ -670,14 +671,14 @@ def get_centros():
 @app.route('/api/centros/<int:centro_id>', methods=['GET'])
 @jwt_required()
 def get_centro(centro_id):
-    centro = CentroSalud.query.get_or_404(centro_id)
+    centro = db.session.get(CentroSalud, centro_id) or abort(404)
     return jsonify(centro.to_dict()), 200
 
 @app.route('/api/centros', methods=['POST'])
 @jwt_required()
 def create_centro():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
@@ -701,12 +702,12 @@ def create_centro():
 @jwt_required()
 def update_centro(centro_id):
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
     
-    centro = CentroSalud.query.get_or_404(centro_id)
+    centro = db.session.get(CentroSalud, centro_id) or abort(404)
     data = request.get_json()
     
     if 'nombre' in data:
@@ -723,18 +724,17 @@ def update_centro(centro_id):
 @jwt_required()
 def delete_centro(centro_id):
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
     
-    centro = CentroSalud.query.get_or_404(centro_id)
+    centro = db.session.get(CentroSalud, centro_id) or abort(404)
     db.session.delete(centro)
     db.session.commit()
     return jsonify({'message': 'Centro eliminado'}), 200
 
 @app.route('/api/planes', methods=['GET'])
-@jwt_required()
 def get_planes():
     planes = Plan.query.all()
     return jsonify([p.to_dict() for p in planes]), 200
@@ -742,14 +742,14 @@ def get_planes():
 @app.route('/api/planes/<int:plan_id>', methods=['GET'])
 @jwt_required()
 def get_plan(plan_id):
-    plan = Plan.query.get_or_404(plan_id)
+    plan = db.session.get(Plan, plan_id) or abort(404)
     return jsonify(plan.to_dict()), 200
 
 @app.route('/api/planes', methods=['POST'])
 @jwt_required()
 def create_plan():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
@@ -773,12 +773,12 @@ def create_plan():
 @jwt_required()
 def update_plan(plan_id):
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
     
-    plan = Plan.query.get_or_404(plan_id)
+    plan = db.session.get(Plan, plan_id) or abort(404)
     data = request.get_json()
     
     if data.get('nombre'):
@@ -795,12 +795,12 @@ def update_plan(plan_id):
 @jwt_required()
 def delete_plan(plan_id):
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
     
-    plan = Plan.query.get_or_404(plan_id)
+    plan = db.session.get(Plan, plan_id) or abort(404)
     db.session.delete(plan)
     db.session.commit()
     return jsonify({'message': 'Plan eliminado'}), 200
@@ -809,7 +809,7 @@ def delete_plan(plan_id):
 @jwt_required()
 def get_citas():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     query = Cita.query
     
@@ -832,14 +832,14 @@ def get_citas():
 @app.route('/api/citas/<int:cita_id>', methods=['GET'])
 @jwt_required()
 def get_cita(cita_id):
-    cita = Cita.query.get_or_404(cita_id)
+    cita = db.session.get(Cita, cita_id) or abort(404)
     return jsonify(cita.to_dict()), 200
 
 @app.route('/api/citas', methods=['POST'])
 @jwt_required()
 def create_cita():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'AFILIADO':
         return jsonify({'error': 'Solo afiliados pueden agendar citas'}), 403
@@ -879,8 +879,8 @@ def create_cita():
 @jwt_required()
 def update_cita(cita_id):
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
-    cita = Cita.query.get_or_404(cita_id)
+    usuario = db.session.get(Usuario, current_id)
+    cita = db.session.get(Cita, cita_id) or abort(404)
     
     data = request.get_json()
     
@@ -909,8 +909,8 @@ def update_cita(cita_id):
 @jwt_required()
 def delete_cita(cita_id):
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
-    cita = Cita.query.get_or_404(cita_id)
+    usuario = db.session.get(Usuario, current_id)
+    cita = db.session.get(Cita, cita_id) or abort(404)
     
     if usuario.rol == 'AFILIADO':
         afiliado = Afiliado.query.filter_by(id_usuario=current_id).first()
@@ -928,7 +928,7 @@ def delete_cita(cita_id):
 @jwt_required()
 def get_facturas():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     query = Factura.query
     
@@ -947,14 +947,14 @@ def get_facturas():
 @app.route('/api/facturas/<int:factura_id>', methods=['GET'])
 @jwt_required()
 def get_factura(factura_id):
-    factura = Factura.query.get_or_404(factura_id)
+    factura = db.session.get(Factura, factura_id) or abort(404)
     return jsonify(factura.to_dict()), 200
 
 @app.route('/api/facturas', methods=['POST'])
 @jwt_required()
 def create_factura():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
@@ -979,12 +979,12 @@ def create_factura():
 @jwt_required()
 def delete_factura(factura_id):
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
     
-    factura = Factura.query.get_or_404(factura_id)
+    factura = db.session.get(Factura, factura_id) or abort(404)
     db.session.delete(factura)
     db.session.commit()
     
@@ -994,8 +994,8 @@ def delete_factura(factura_id):
 @jwt_required()
 def pagar_factura(factura_id):
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
-    factura = Factura.query.get_or_404(factura_id)
+    usuario = db.session.get(Usuario, current_id)
+    factura = db.session.get(Factura, factura_id) or abort(404)
     
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
@@ -1018,7 +1018,7 @@ def pagar_factura(factura_id):
 @jwt_required()
 def get_pagos():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
@@ -1030,7 +1030,7 @@ def get_pagos():
 @jwt_required()
 def get_historial():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     query = HistorialClinico.query
     
@@ -1050,7 +1050,7 @@ def get_historial():
 @jwt_required()
 def create_historial():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'PROFESIONAL':
         return jsonify({'error': 'Solo profesionales pueden registrar historial'}), 403
@@ -1074,7 +1074,7 @@ def create_historial():
     db.session.add(historial)
     
     if data.get('id_cita'):
-        cita = Cita.query.get(data['id_cita'])
+        cita = db.session.get(Cita, data['id_cita'])
         if cita:
             cita.estado = 'FINALIZADA'
     
@@ -1086,7 +1086,7 @@ def create_historial():
 @jwt_required()
 def get_afiliados_facturas_pendientes():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
@@ -1114,7 +1114,7 @@ def get_afiliados_facturas_pendientes():
 @jwt_required()
 def get_facturacion_por_plan():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
@@ -1139,7 +1139,7 @@ def get_facturacion_por_plan():
 @jwt_required()
 def get_diagnosticos_frecuentes():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
@@ -1165,7 +1165,7 @@ def get_diagnosticos_frecuentes():
 @jwt_required()
 def get_centros_mas_utilizados():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
@@ -1190,7 +1190,7 @@ def get_centros_mas_utilizados():
 @jwt_required()
 def get_citas_proximas_afiliado():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     afiliado = Afiliado.query.filter_by(id_usuario=current_id).first()
     if not afiliado:
@@ -1209,7 +1209,7 @@ def get_citas_proximas_afiliado():
 @jwt_required()
 def get_dashboard_estadisticas():
     current_id = int(get_jwt_identity())
-    usuario = Usuario.query.get(current_id)
+    usuario = db.session.get(Usuario, current_id)
     
     if usuario.rol != 'ADMIN':
         return jsonify({'error': 'No autorizado'}), 403
