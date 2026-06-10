@@ -53,8 +53,15 @@ def init_default_data():
         print(f"[EPS] Error inicializando datos: {e}")
 
 def ejecutar_seed_sql():
-    """Ejecuta el script seed.sql si existe"""
+    """Ejecuta el script seed.sql SOLO si la base de datos está vacía"""
+    from models import Usuario
     import os
+    
+    # Solo ejecutar si no hay ningún usuario
+    if Usuario.query.count() > 0:
+        print("[EPS] Base de datos ya tiene datos, omitiendo seed")
+        return
+    
     seed_path = os.path.join(os.path.dirname(__file__), 'scripts', 'seed.sql')
     
     if not os.path.exists(seed_path):
@@ -102,15 +109,36 @@ def validate_telefono_co(tel):
         return False
     return bool(re.match(r'^3\d{9}$', tel))
 
-def validate_fecha_nacimiento(fecha_str):
-    """Fecha de nacimiento no puede ser futura ni posterior a hoy."""
+def validate_fecha_nacimiento(fecha_str, tipo_documento=None):
+    """Fecha de nacimiento no puede ser futura. Valida edad según tipo de documento."""
     if not fecha_str:
-        return False
+        return False, 'La fecha de nacimiento es requerida'
     try:
         fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
-        return fecha <= datetime.now().date()
+        hoy = datetime.now().date()
+        
+        if fecha > hoy:
+            return False, 'La fecha de nacimiento no puede ser futura'
+        
+        if tipo_documento:
+            edad = (hoy - fecha).days // 365
+            
+            if tipo_documento == 'RC':
+                # Registro Civil: 0 a 6 años
+                if edad > 6:
+                    return False, 'El Registro Civil es solo para niños menores de 7 años'
+            elif tipo_documento == 'TI':
+                # Tarjeta de Identidad: 7 a 17 años
+                if edad < 7 or edad > 17:
+                    return False, 'La Tarjeta de Identidad es solo para niños de 7 a 17 años'
+            elif tipo_documento == 'CC':
+                # Cédula: 18+ años
+                if edad < 18:
+                    return False, 'La Cédula de Ciudadanía es solo para mayores de 18 años'
+        
+        return True, ''
     except ValueError:
-        return False
+        return False, 'Formato de fecha inválido'
 
 def validate_time(t):
     """Hora válida: formato HH:MM, entre 06:00 y 20:00 inclusive."""
@@ -134,6 +162,7 @@ def index():
 def init_db():
     try:
         init_default_data()
+        ejecutar_seed_sql()
         return jsonify({'message': 'Base de datos EPS inicializada correctamente'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -154,14 +183,30 @@ def register():
         return jsonify({'error': 'Email ya registrado'}), 400
     
     documento = data.get('documento', '')
+    tipo_documento = data.get('tipo_documento', '')
     telefono = data.get('telefono', '')
     fecha_nacimiento = data.get('fecha_nacimiento', '')
 
     if documento:
-        if not validate_documento(documento):
-            return jsonify({'error': 'La cédula debe tener entre 6 y 10 dígitos numéricos'}), 400
-        if Afiliado.query.filter_by(documento=documento).first():
-            return jsonify({'error': 'Este número de cédula ya está registrado'}), 400
+        if not tipo_documento:
+            return jsonify({'error': 'El tipo de documento es requerido'}), 400
+        if tipo_documento not in ['CC', 'TI', 'RC']:
+            return jsonify({'error': 'Tipo de documento inválido'}), 400
+        
+        # Validar cantidad de dígitos según tipo de documento
+        doc_len = len(documento)
+        if tipo_documento == 'RC':
+            if doc_len < 6 or doc_len > 10:
+                return jsonify({'error': 'El Registro Civil debe tener entre 6 y 10 dígitos'}), 400
+        elif tipo_documento == 'TI':
+            if doc_len < 7 or doc_len > 10:
+                return jsonify({'error': 'La Tarjeta de Identidad debe tener entre 7 y 10 dígitos'}), 400
+        elif tipo_documento == 'CC':
+            if doc_len < 6 or doc_len > 10:
+                return jsonify({'error': 'La Cédula debe tener entre 6 y 10 dígitos'}), 400
+        
+        if Afiliado.query.filter_by(documento=documento, tipo_documento=tipo_documento).first():
+            return jsonify({'error': 'Este número de documento ya está registrado'}), 400
 
     if telefono:
         if not validate_telefono_co(telefono):
@@ -170,8 +215,9 @@ def register():
             return jsonify({'error': 'Este número de teléfono ya está registrado'}), 400
 
     if fecha_nacimiento:
-        if not validate_fecha_nacimiento(fecha_nacimiento):
-            return jsonify({'error': 'La fecha de nacimiento no puede ser una fecha futura'}), 400
+        valido, mensaje = validate_fecha_nacimiento(fecha_nacimiento, tipo_documento)
+        if not valido:
+            return jsonify({'error': mensaje}), 400
 
     if data['rol'] not in ['AFILIADO', 'ADMIN', 'PROFESIONAL']:
         return jsonify({'error': 'Rol inválido'}), 400
@@ -188,8 +234,11 @@ def register():
     db.session.flush()
     
     if data['rol'] == 'AFILIADO':
+        if not data.get('id_plan'):
+            return jsonify({'error': 'El plan de salud es requerido'}), 400
         afiliado = Afiliado(
             id_usuario=usuario.id_usuario,
+            tipo_documento=data.get('tipo_documento', ''),
             documento=data.get('documento', ''),
             telefono=data.get('telefono', ''),
             direccion=data.get('direccion', ''),
@@ -330,13 +379,56 @@ def create_afiliado():
     
     data = request.get_json()
     
-    required = ['email', 'password', 'nombre', 'documento']
+    required = ['email', 'password', 'nombre', 'documento', 'id_plan']
     for field in required:
         if not data.get(field):
             return jsonify({'error': f'Campo {field} requerido'}), 400
     
+    if not data.get('id_plan'):
+        return jsonify({'error': 'El plan de salud es requerido'}), 400
+    
+    if not validate_email(data['email']):
+        return jsonify({'error': 'Email inválido'}), 400
+    
     if Usuario.query.filter_by(email=data['email']).first():
         return jsonify({'error': 'Email ya registrado'}), 400
+    
+    documento = data.get('documento', '')
+    tipo_documento = data.get('tipo_documento', '')
+    telefono = data.get('telefono', '')
+    
+    if documento:
+        if not tipo_documento:
+            return jsonify({'error': 'El tipo de documento es requerido'}), 400
+        if tipo_documento not in ['CC', 'TI', 'RC']:
+            return jsonify({'error': 'Tipo de documento inválido'}), 400
+        
+        doc_len = len(documento)
+        if tipo_documento == 'RC':
+            if doc_len < 6 or doc_len > 10:
+                return jsonify({'error': 'El Registro Civil debe tener entre 6 y 10 dígitos'}), 400
+        elif tipo_documento == 'TI':
+            if doc_len < 7 or doc_len > 10:
+                return jsonify({'error': 'La Tarjeta de Identidad debe tener entre 7 y 10 dígitos'}), 400
+        elif tipo_documento == 'CC':
+            if doc_len < 6 or doc_len > 10:
+                return jsonify({'error': 'La Cédula debe tener entre 6 y 10 dígitos'}), 400
+        
+        if Afiliado.query.filter_by(documento=documento, tipo_documento=tipo_documento).first():
+            return jsonify({'error': 'Este número de documento ya está registrado'}), 400
+
+    telefono = data.get('telefono', '')
+    if telefono:
+        if not validate_telefono_co(telefono):
+            return jsonify({'error': 'El teléfono debe ser un número móvil colombiano (10 dígitos, empieza con 3)'}), 400
+        if Afiliado.query.filter_by(telefono=telefono).first():
+            return jsonify({'error': 'Este número de teléfono ya está registrado'}), 400
+    
+    fecha_nacimiento = data.get('fecha_nacimiento', '')
+    if fecha_nacimiento:
+        valido, mensaje = validate_fecha_nacimiento(fecha_nacimiento, tipo_documento)
+        if not valido:
+            return jsonify({'error': mensaje}), 400
     
     hashed = bcrypt.generate_password_hash(data['password']).decode('utf-8')
     nuevo_usuario = Usuario(
@@ -350,7 +442,8 @@ def create_afiliado():
     
     afiliado = Afiliado(
         id_usuario=nuevo_usuario.id_usuario,
-        documento=data['documento'],
+        tipo_documento=tipo_documento,
+        documento=documento,
         fecha_nacimiento=datetime.strptime(data['fecha_nacimiento'], '%Y-%m-%d').date() if data.get('fecha_nacimiento') else None,
         telefono=data.get('telefono', ''),
         direccion=data.get('direccion', ''),
@@ -373,19 +466,46 @@ def update_afiliado(afiliado_id):
     
     data = request.get_json()
     
+    usuario_afiliado = Usuario.query.get(afiliado.id_usuario)
+    if data.get('nombre') and usuario_afiliado:
+        usuario_afiliado.nombre = data['nombre']
     if 'documento' in data:
+        if data['documento'] and not validate_documento(data['documento']):
+            return jsonify({'error': 'Cédula inválida: entre 6 y 10 dígitos numéricos'}), 400
         afiliado.documento = data['documento']
-    if 'fecha_nacimiento' in data:
+    if 'fecha_nacimiento' in data and data['fecha_nacimiento']:
+        if not validate_fecha_nacimiento(data['fecha_nacimiento']):
+            return jsonify({'error': 'La fecha de nacimiento no puede ser futura'}), 400
         afiliado.fecha_nacimiento = datetime.strptime(data['fecha_nacimiento'], '%Y-%m-%d').date()
-    if 'telefono' in data:
+    if 'telefono' in data and data['telefono']:
+        if not validate_telefono_co(data['telefono']):
+            return jsonify({'error': 'Teléfono colombiano inválido'}), 400
         afiliado.telefono = data['telefono']
     if 'direccion' in data:
         afiliado.direccion = data['direccion']
     if 'id_plan' in data:
         afiliado.id_plan = data['id_plan']
-    
+
     db.session.commit()
     return jsonify(afiliado.to_dict()), 200
+
+@app.route('/api/afiliados/<int:afiliado_id>', methods=['DELETE'])
+@jwt_required()
+def delete_afiliado(afiliado_id):
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+
+    if usuario.rol != 'ADMIN':
+        return jsonify({'error': 'No autorizado'}), 403
+
+    afiliado = Afiliado.query.get_or_404(afiliado_id)
+    usuario_afiliado = Usuario.query.get(afiliado.id_usuario)
+
+    db.session.delete(afiliado)
+    if usuario_afiliado:
+        db.session.delete(usuario_afiliado)
+    db.session.commit()
+    return jsonify({'message': 'Afiliado eliminado'}), 200
 
 @app.route('/api/profesionales', methods=['GET'])
 @jwt_required()
@@ -410,10 +530,13 @@ def create_profesional():
     
     data = request.get_json()
     
-    required = ['email', 'password', 'nombre', 'especialidad']
+    required = ['email', 'password', 'nombre', 'especialidad', 'id_centro']
     for field in required:
         if not data.get(field):
             return jsonify({'error': f'Campo {field} requerido'}), 400
+    
+    if not data.get('id_centro'):
+        return jsonify({'error': 'El centro de salud es requerido'}), 400
     
     if Usuario.query.filter_by(email=data['email']).first():
         return jsonify({'error': 'Email ya registrado'}), 400
@@ -450,13 +573,34 @@ def update_profesional(profesional_id):
     
     data = request.get_json()
     
+    usuario_prof = Usuario.query.get(profesional.id_usuario)
+    if data.get('nombre') and usuario_prof:
+        usuario_prof.nombre = data['nombre']
     if 'especialidad' in data:
         profesional.especialidad = data['especialidad']
     if 'id_centro' in data:
         profesional.id_centro = data['id_centro']
-    
+
     db.session.commit()
     return jsonify(profesional.to_dict()), 200
+
+@app.route('/api/profesionales/<int:profesional_id>', methods=['DELETE'])
+@jwt_required()
+def delete_profesional(profesional_id):
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+
+    if usuario.rol != 'ADMIN':
+        return jsonify({'error': 'No autorizado'}), 403
+
+    profesional = Profesional.query.get_or_404(profesional_id)
+    usuario_prof = Usuario.query.get(profesional.id_usuario)
+
+    db.session.delete(profesional)
+    if usuario_prof:
+        db.session.delete(usuario_prof)
+    db.session.commit()
+    return jsonify({'message': 'Profesional eliminado'}), 200
 
 @app.route('/api/disponibilidad/<int:profesional_id>', methods=['GET'])
 @jwt_required()
@@ -1051,6 +1195,77 @@ def get_citas_proximas_afiliado():
     ).order_by(Cita.fecha).limit(10).all()
     
     return jsonify([c.to_dict() for c in citas]), 200
+
+@app.route('/api/dashboard/estadisticas', methods=['GET'])
+@jwt_required()
+def get_dashboard_estadisticas():
+    current_id = int(get_jwt_identity())
+    usuario = Usuario.query.get(current_id)
+    
+    if usuario.rol != 'ADMIN':
+        return jsonify({'error': 'No autorizado'}), 403
+    
+    total_afiliados = Afiliado.query.count()
+    total_profesionales = Profesional.query.count()
+    total_centros = CentroSalud.query.count()
+    total_citas = Cita.query.count()
+    total_facturas = Factura.query.count()
+    
+    facturas_pendientes = Factura.query.filter_by(estado='PENDIENTE').count()
+    facturas_pagadas = Factura.query.filter_by(estado='PAGADA').count()
+    
+    citas_pendientes = Cita.query.filter_by(estado='PENDIENTE').count()
+    citas_confirmadas = Cita.query.filter_by(estado='CONFIRMADA').count()
+    citas_finalizadas = Cita.query.filter_by(estado='FINALIZADA').count()
+    citas_canceladas = Cita.query.filter_by(estado='CANCELADA').count()
+    
+    citas_mes_actual = Cita.query.filter(
+        db.func.month(Cita.fecha) == datetime.now().month,
+        db.func.year(Cita.fecha) == datetime.now().year
+    ).count()
+    
+    facturacion_total = db.session.execute(
+        db.text('SELECT COALESCE(SUM(total), 0) FROM facturas WHERE estado = "PAGADA"')
+    ).scalar() or 0
+    
+    facturacion_pendiente = db.session.execute(
+        db.text('SELECT COALESCE(SUM(total), 0) FROM facturas WHERE estado = "PENDIENTE"')
+    ).scalar() or 0
+    
+    afiliados_por_plan = db.session.execute(
+        db.text('''
+            SELECT p.nombre, COUNT(a.id_afiliado) as cantidad
+            FROM planes p
+            LEFT JOIN afiliados a ON p.id_plan = a.id_plan
+            GROUP BY p.id_plan, p.nombre
+        ''')
+    ).fetchall()
+    
+    return jsonify({
+        'totales': {
+            'afiliados': total_afiliados,
+            'profesionales': total_profesionales,
+            'centros': total_centros,
+            'citas': total_citas,
+            'facturas': total_facturas
+        },
+        'citas_por_estado': {
+            'pendiente': citas_pendientes,
+            'confirmada': citas_confirmadas,
+            'finalizada': citas_finalizadas,
+            'cancelada': citas_canceladas
+        },
+        'facturas_por_estado': {
+            'pendiente': facturas_pendientes,
+            'pagada': facturas_pagadas
+        },
+        'afiliados_por_plan': [{'plan': r[0], 'cantidad': r[1]} for r in afiliados_por_plan],
+        'citas_mes_actual': citas_mes_actual,
+        'facturacion': {
+            'total': float(facturacion_total),
+            'pendiente': float(facturacion_pendiente)
+        }
+    }), 200
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

@@ -53,6 +53,10 @@ export class ApiService {
     return this.http.put(this.apiUrl + '/afiliados/' + id, data, { headers: this.getHeaders() });
   }
 
+  deleteAfiliado(id: number): any {
+    return this.http.delete(this.apiUrl + '/afiliados/' + id, { headers: this.getHeaders() });
+  }
+
   getProfesionales(): any {
     return this.http.get(this.apiUrl + '/profesionales', { headers: this.getHeaders() });
   }
@@ -67,6 +71,10 @@ export class ApiService {
 
   updateProfesional(id: number, data: any): any {
     return this.http.put(this.apiUrl + '/profesionales/' + id, data, { headers: this.getHeaders() });
+  }
+
+  deleteProfesional(id: number): any {
+    return this.http.delete(this.apiUrl + '/profesionales/' + id, { headers: this.getHeaders() });
   }
 
   getCentros(): any {
@@ -207,5 +215,9 @@ export class ApiService {
 
   getCentrosMasUtilizados(): any {
     return this.http.get(this.apiUrl + '/consultas/centros-mas-utilizados', { headers: this.getHeaders() });
+  }
+
+  getDashboardEstadisticas(): any {
+    return this.http.get(this.apiUrl + '/dashboard/estadisticas', { headers: this.getHeaders() });
   }
 }

@@ -21,35 +21,35 @@
     </div>
     
     <nav class="sidebar-nav">
-      <a [class.active]="activeTab === 'dashboard'" (click)="activeTab = 'dashboard'" class="nav-item">
+      <a [class.active]="activeTab === 'dashboard'" (click)="onTabChange('dashboard')" class="nav-item">
         <i class="fas fa-chart-line"></i>
         <span>Dashboard</span>
       </a>
-      <a [class.active]="activeTab === 'afiliados'" (click)="activeTab = 'afiliados'" class="nav-item">
+      <a [class.active]="activeTab === 'afiliados'" (click)="onTabChange('afiliados')" class="nav-item">
         <i class="fas fa-users"></i>
         <span>Afiliados</span>
       </a>
-      <a [class.active]="activeTab === 'profesionales'" (click)="activeTab = 'profesionales'" class="nav-item">
+      <a [class.active]="activeTab === 'profesionales'" (click)="onTabChange('profesionales')" class="nav-item">
         <i class="fas fa-user-md"></i>
         <span>Profesionales</span>
       </a>
-      <a [class.active]="activeTab === 'centros'" (click)="activeTab = 'centros'" class="nav-item">
+      <a [class.active]="activeTab === 'centros'" (click)="onTabChange('centros')" class="nav-item">
         <i class="fas fa-clinic-medical"></i>
         <span>Centros de Salud</span>
       </a>
-      <a [class.active]="activeTab === 'planes'" (click)="activeTab = 'planes'" class="nav-item">
+      <a [class.active]="activeTab === 'planes'" (click)="onTabChange('planes')" class="nav-item">
         <i class="fas fa-file-alt"></i>
         <span>Planes</span>
       </a>
-      <a [class.active]="activeTab === 'citas'" (click)="activeTab = 'citas'" class="nav-item">
+      <a [class.active]="activeTab === 'citas'" (click)="onTabChange('citas')" class="nav-item">
         <i class="fas fa-calendar-alt"></i>
         <span>Citas</span>
       </a>
-      <a [class.active]="activeTab === 'facturas'" (click)="activeTab = 'facturas'" class="nav-item">
+      <a [class.active]="activeTab === 'facturas'" (click)="onTabChange('facturas')" class="nav-item">
         <i class="fas fa-file-invoice-dollar"></i>
         <span>Facturación</span>
       </a>
-      <a [class.active]="activeTab === 'consultas'" (click)="activeTab = 'consultas'" class="nav-item">
+      <a [class.active]="activeTab === 'consultas'" (click)="onTabChange('consultas')" class="nav-item">
         <i class="fas fa-chart-pie"></i>
         <span>Consultas</span>
       </a>
@@ -76,33 +76,151 @@
     <!-- Dashboard -->
     <section *ngIf="activeTab === 'dashboard'" class="content-section">
       <h2>Panel de Administración - EPS Bienestar</h2>
+      
       <div class="stats-grid">
-        <div class="stat-card">
-          <i class="fas fa-users"></i>
+        <div class="stat-card stat-card-primary">
+          <div class="stat-icon">
+            <i class="fas fa-users"></i>
+          </div>
           <div class="stat-info">
-            <h3>{{ afiliados.length }}</h3>
-            <p>Afiliados</p>
+            <h3>{{ estadisticas.totales?.afiliados || 0 }}</h3>
+            <p>Afiliados Activos</p>
           </div>
         </div>
-        <div class="stat-card">
-          <i class="fas fa-user-md"></i>
+        <div class="stat-card stat-card-success">
+          <div class="stat-icon">
+            <i class="fas fa-user-md"></i>
+          </div>
           <div class="stat-info">
-            <h3>{{ profesionales.length }}</h3>
+            <h3>{{ estadisticas.totales?.profesionales || 0 }}</h3>
             <p>Profesionales</p>
           </div>
         </div>
-        <div class="stat-card">
-          <i class="fas fa-clinic-medical"></i>
+        <div class="stat-card stat-card-info">
+          <div class="stat-icon">
+            <i class="fas fa-calendar-check"></i>
+          </div>
           <div class="stat-info">
-            <h3>{{ centros.length }}</h3>
-            <p>Centros</p>
+            <h3>{{ estadisticas.citas_mes_actual || 0 }}</h3>
+            <p>Citas Este Mes</p>
           </div>
         </div>
-        <div class="stat-card">
-          <i class="fas fa-calendar-check"></i>
+        <div class="stat-card stat-card-warning">
+          <div class="stat-icon">
+            <i class="fas fa-clock"></i>
+          </div>
           <div class="stat-info">
-            <h3>{{ citas.length }}</h3>
-            <p>Citas</p>
+            <h3>{{ estadisticas.citas_por_estado?.pendiente || 0 }}</h3>
+            <p>Citas Pendientes</p>
+          </div>
+        </div>
+        <div class="stat-card stat-card-success">
+          <div class="stat-icon">
+            <i class="fas fa-dollar-sign"></i>
+          </div>
+          <div class="stat-info">
+            <h3>${{ (estadisticas.facturacion?.total || 0) | number:'1.0-0' }}</h3>
+            <p>Facturación Cobrada</p>
+          </div>
+        </div>
+        <div class="stat-card stat-card-danger">
+          <div class="stat-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <div class="stat-info">
+            <h3>${{ (estadisticas.facturacion?.pendiente || 0) | number:'1.0-0' }}</h3>
+            <p>Cuenta por Cobrar</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-row">
+        <div class="dashboard-col">
+          <div class="chart-card chart-card-lg">
+            <div class="chart-header">
+              <h3><i class="fas fa-users"></i> Afiliados por Plan</h3>
+              <span class="chart-badge">{{ estadisticas.totales?.afiliados || 0 }} total</span>
+            </div>
+            <div class="chart-body">
+              <canvas id="afiliadosPlanChart"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="dashboard-col">
+          <div class="chart-card chart-card-lg">
+            <div class="chart-header">
+              <h3><i class="fas fa-chart-pie"></i> Estado de Citas</h3>
+              <span class="chart-badge">{{ estadisticas.totales?.citas || 0 }} total</span>
+            </div>
+            <div class="chart-body">
+              <canvas id="citasEstadoChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-row">
+        <div class="dashboard-col-full">
+          <div class="chart-card chart-card-xl">
+            <div class="chart-header">
+              <h3><i class="fas fa-chart-bar"></i> Facturación por Plan</h3>
+              <span class="chart-badge">Resumen mensual</span>
+            </div>
+            <div class="chart-body chart-body-lg">
+              <canvas id="facturacionChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-row">
+        <div class="dashboard-col-full">
+          <div class="chart-card chart-card-xl">
+            <div class="chart-header">
+              <h3><i class="fas fa-hospital"></i> Centros de Salud más Utilizados</h3>
+              <span class="chart-badge">{{ estadisticas.totales?.centros || 0 }} centros</span>
+            </div>
+            <div class="chart-body chart-body-lg">
+              <canvas id="centrosChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-row">
+        <div class="dashboard-col">
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3><i class="fas fa-file-invoice"></i> Facturas</h3>
+            </div>
+            <div class="chart-body-small">
+              <canvas id="facturasChart"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="dashboard-col">
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3><i class="fas fa-check-circle"></i> Resumen</h3>
+            </div>
+            <div class="summary-box">
+              <div class="summary-item">
+                <span class="summary-label">Citas Confirmadas</span>
+                <span class="summary-value summary-success">{{ estadisticas.citas_por_estado?.confirmada || 0 }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Citas Finalizadas</span>
+                <span class="summary-value summary-info">{{ estadisticas.citas_por_estado?.finalizada || 0 }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Facturas Pagadas</span>
+                <span class="summary-value summary-success">{{ estadisticas.facturas_por_estado?.pagada || 0 }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Facturas Pendientes</span>
+                <span class="summary-value summary-warning">{{ estadisticas.facturas_por_estado?.pendiente || 0 }}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -123,10 +241,19 @@
             <input type="email" [(ngModel)]="nuevoAfiliado.email" name="email" required placeholder="correo@ejemplo.com">
           </div>
           <div class="form-group">
-            <label>Cédula <span style="color:red">*</span></label>
+            <label>Tipo Documento <span style="color:red">*</span></label>
+            <select [(ngModel)]="nuevoAfiliado.tipo_documento" name="tipo_documento" required>
+              <option value="">-- Seleccionar --</option>
+              <option value="CC">Cédula (CC)</option>
+              <option value="TI">Tarjeta de Identidad (TI)</option>
+              <option value="RC">Registro Civil (RC)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Número Documento <span style="color:red">*</span></label>
             <input type="text" [(ngModel)]="nuevoAfiliado.documento" name="documento" required
-                   pattern="[0-9]{6,10}" maxlength="10"
-                   title="Solo dígitos, entre 6 y 10 caracteres"
+                   maxlength="15"
+                   title="Número del documento"
                    placeholder="12345678"
                    (input)="filtrarNumerosAdmin($event, nuevoAfiliado, 'documento')">
           </div>
@@ -148,8 +275,8 @@
             <input type="text" [(ngModel)]="nuevoAfiliado.direccion" name="direccion" placeholder="Calle 123, Ciudad">
           </div>
           <div class="form-group">
-            <label>Plan</label>
-            <select [(ngModel)]="nuevoAfiliado.id_plan" name="plan">
+            <label>Plan <span style="color:red">*</span></label>
+            <select [(ngModel)]="nuevoAfiliado.id_plan" name="plan" required>
               <option [ngValue]="null">-- Seleccionar --</option>
               <option *ngFor="let p of planes" [value]="p.id_plan">{{ p.nombre }}</option>
             </select>
@@ -167,6 +294,46 @@
           </div>
         </form>
       </div>
+      <!-- Formulario edición afiliado -->
+      <div *ngIf="editandoAfiliado" class="form-section form-section-edit">
+        <h3>Editar Afiliado</h3>
+        <form class="form-grid">
+          <div class="form-group">
+            <label>Nombre <span style="color:red">*</span></label>
+            <input type="text" [(ngModel)]="afiliadoEditar.nombre" name="edit_nombre" required>
+          </div>
+          <div class="form-group">
+            <label>Teléfono Celular</label>
+            <input type="text" [(ngModel)]="afiliadoEditar.telefono" name="edit_telefono"
+                   maxlength="10" pattern="3[0-9]{9}"
+                   title="10 dígitos, empieza con 3"
+                   (input)="filtrarNumerosAdmin($event, afiliadoEditar, 'telefono')">
+          </div>
+          <div class="form-group">
+            <label>Dirección</label>
+            <input type="text" [(ngModel)]="afiliadoEditar.direccion" name="edit_direccion">
+          </div>
+          <div class="form-group">
+            <label>Fecha de Nacimiento</label>
+            <input type="date" [(ngModel)]="afiliadoEditar.fecha_nacimiento" name="edit_fecha_nac" [max]="maxFecha">
+          </div>
+          <div class="form-group">
+            <label>Plan</label>
+            <select [(ngModel)]="afiliadoEditar.id_plan" name="edit_plan">
+              <option [ngValue]="null">-- Sin plan --</option>
+              <option *ngFor="let p of planes" [value]="p.id_plan">{{ p.nombre }}</option>
+            </select>
+          </div>
+          <div class="form-actions">
+            <button type="button" (click)="guardarAfiliado()" [disabled]="loading" class="btn-primary">
+              <span *ngIf="loading" class="spinner"></span>
+              {{ loading ? 'Guardando...' : 'Guardar Cambios' }}
+            </button>
+            <button type="button" (click)="cancelarEdicionAfiliado()" class="btn-secondary">Cancelar</button>
+          </div>
+        </form>
+      </div>
+
       <div class="list-section">
         <h3>Lista de Afiliados</h3>
         <table class="data-table">
@@ -177,6 +344,7 @@
               <th>Documento</th>
               <th>Teléfono</th>
               <th>Plan</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -186,9 +354,46 @@
               <td>{{ a.documento }}</td>
               <td>{{ a.telefono }}</td>
               <td>{{ a.plan?.nombre }}</td>
+              <td class="acciones-col">
+                <button class="btn-icon btn-ver" (click)="verAfiliado(a)" title="Ver información">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn-icon btn-edit" (click)="editarAfiliado(a)" title="Editar">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-icon btn-del" (click)="eliminarAfiliado(a.id_afiliado)" title="Eliminar">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Modal ver afiliado -->
+      <div *ngIf="afiliadoVer" class="modal-overlay" (click)="cerrarVerAfiliado()">
+        <div class="modal-card" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3><i class="fas fa-user"></i> Información del Afiliado</h3>
+            <button class="modal-close" (click)="cerrarVerAfiliado()"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="modal-body">
+            <div class="info-grid">
+              <div class="info-item"><span class="info-label">Nombre</span><span class="info-value">{{ afiliadoVer.usuario?.nombre }}</span></div>
+              <div class="info-item"><span class="info-label">Email</span><span class="info-value">{{ afiliadoVer.usuario?.email }}</span></div>
+              <div class="info-item"><span class="info-label">Documento</span><span class="info-value">{{ afiliadoVer.documento || '-' }}</span></div>
+              <div class="info-item"><span class="info-label">Teléfono</span><span class="info-value">{{ afiliadoVer.telefono || '-' }}</span></div>
+              <div class="info-item"><span class="info-label">Fecha Nacimiento</span><span class="info-value">{{ afiliadoVer.fecha_nacimiento || '-' }}</span></div>
+              <div class="info-item"><span class="info-label">Dirección</span><span class="info-value">{{ afiliadoVer.direccion || '-' }}</span></div>
+              <div class="info-item"><span class="info-label">Plan</span><span class="info-value">{{ afiliadoVer.plan?.nombre || '-' }}</span></div>
+              <div class="info-item"><span class="info-label">Rol</span><span class="info-value">{{ afiliadoVer.usuario?.rol }}</span></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-primary" (click)="editarAfiliado(afiliadoVer)"><i class="fas fa-edit"></i> Editar</button>
+            <button class="btn-secondary" (click)="cerrarVerAfiliado()">Cerrar</button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -215,8 +420,8 @@
             <input type="text" [(ngModel)]="nuevoProfesional.especialidad" name="especialidad" required>
           </div>
           <div class="form-group">
-            <label>Centro</label>
-            <select [(ngModel)]="nuevoProfesional.id_centro" name="centro">
+            <label>Centro <span style="color:red">*</span></label>
+            <select [(ngModel)]="nuevoProfesional.id_centro" name="centro" required>
               <option [ngValue]="null">-- Seleccionar --</option>
               <option *ngFor="let c of centros" [value]="c.id_centro">{{ c.nombre }}</option>
             </select>
@@ -230,6 +435,35 @@
           </div>
         </form>
       </div>
+      <!-- Formulario edición profesional -->
+      <div *ngIf="editandoProfesional" class="form-section form-section-edit">
+        <h3>Editar Profesional</h3>
+        <form class="form-grid">
+          <div class="form-group">
+            <label>Nombre <span style="color:red">*</span></label>
+            <input type="text" [(ngModel)]="profesionalEditar.nombre" name="pedit_nombre" required>
+          </div>
+          <div class="form-group">
+            <label>Especialidad <span style="color:red">*</span></label>
+            <input type="text" [(ngModel)]="profesionalEditar.especialidad" name="pedit_especialidad" required>
+          </div>
+          <div class="form-group">
+            <label>Centro de Salud</label>
+            <select [(ngModel)]="profesionalEditar.id_centro" name="pedit_centro">
+              <option [ngValue]="null">-- Sin centro --</option>
+              <option *ngFor="let c of centros" [value]="c.id_centro">{{ c.nombre }}</option>
+            </select>
+          </div>
+          <div class="form-actions">
+            <button type="button" (click)="guardarProfesional()" [disabled]="loading" class="btn-primary">
+              <span *ngIf="loading" class="spinner"></span>
+              {{ loading ? 'Guardando...' : 'Guardar Cambios' }}
+            </button>
+            <button type="button" (click)="cancelarEdicionProfesional()" class="btn-secondary">Cancelar</button>
+          </div>
+        </form>
+      </div>
+
       <div class="list-section">
         <h3>Lista de Profesionales</h3>
         <table class="data-table">
@@ -239,6 +473,7 @@
               <th>Email</th>
               <th>Especialidad</th>
               <th>Centro</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -247,9 +482,44 @@
               <td>{{ p.usuario?.email }}</td>
               <td>{{ p.especialidad }}</td>
               <td>{{ p.centro?.nombre }}</td>
+              <td class="acciones-col">
+                <button class="btn-icon btn-ver" (click)="verProfesional(p)" title="Ver información">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn-icon btn-edit" (click)="editarProfesional(p)" title="Editar">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-icon btn-del" (click)="eliminarProfesional(p.id_profesional)" title="Eliminar">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Modal ver profesional -->
+      <div *ngIf="profesionalVer" class="modal-overlay" (click)="cerrarVerProfesional()">
+        <div class="modal-card" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3><i class="fas fa-user-md"></i> Información del Profesional</h3>
+            <button class="modal-close" (click)="cerrarVerProfesional()"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="modal-body">
+            <div class="info-grid">
+              <div class="info-item"><span class="info-label">Nombre</span><span class="info-value">{{ profesionalVer.usuario?.nombre }}</span></div>
+              <div class="info-item"><span class="info-label">Email</span><span class="info-value">{{ profesionalVer.usuario?.email }}</span></div>
+              <div class="info-item"><span class="info-label">Especialidad</span><span class="info-value">{{ profesionalVer.especialidad }}</span></div>
+              <div class="info-item"><span class="info-label">Centro</span><span class="info-value">{{ profesionalVer.centro?.nombre || '-' }}</span></div>
+              <div class="info-item"><span class="info-label">Ciudad Centro</span><span class="info-value">{{ profesionalVer.centro?.ciudad || '-' }}</span></div>
+              <div class="info-item"><span class="info-label">Rol</span><span class="info-value">{{ profesionalVer.usuario?.rol }}</span></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-primary" (click)="editarProfesional(profesionalVer)"><i class="fas fa-edit"></i> Editar</button>
+            <button class="btn-secondary" (click)="cerrarVerProfesional()">Cerrar</button>
+          </div>
+        </div>
       </div>
     </section>
 
