@@ -43,13 +43,31 @@ export class RegisterComponent {
     });
   }
 
-  filtrarNumeros(event: any, campo: string): void {
+  filtrarTelefono(event: any): void {
     const input = event.target;
-    const valor = input.value.replace(/\D/g, '');
-    if (campo === 'documento') {
-      this.documento = valor;
-    } else if (campo === 'telefono') {
-      this.telefono = valor;
+    let valor = input.value.replace(/\D/g, '');
+    if (valor.length > 10) {
+      valor = valor.substring(0, 10);
+    }
+    this.telefono = valor;
+  }
+
+  filtrarDocumento(event: any): void {
+    const input = event.target;
+    let valor = input.value.replace(/\D/g, '');
+    if (valor.length > 10) {
+      valor = valor.substring(0, 10);
+    }
+    this.documento = valor;
+  }
+
+  preventNonNumeric(event: KeyboardEvent): void {
+    const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+    if (allowedKeys.includes(event.key)) {
+      return;
+    }
+    if (!/^\d$/.test(event.key)) {
+      event.preventDefault();
     }
   }
 

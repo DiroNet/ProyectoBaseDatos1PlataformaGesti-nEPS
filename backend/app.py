@@ -52,9 +52,39 @@ def init_default_data():
         db.session.rollback()
         print(f"[EPS] Error inicializando datos: {e}")
 
+def ejecutar_seed_sql():
+    """Ejecuta el script seed.sql si existe"""
+    import os
+    seed_path = os.path.join(os.path.dirname(__file__), 'scripts', 'seed.sql')
+    
+    if not os.path.exists(seed_path):
+        print("[EPS] seed.sql no encontrado, usando init_default_data")
+        return
+    
+    try:
+        with open(seed_path, 'r', encoding='utf-8') as f:
+            sql_script = f.read()
+        
+        from sqlalchemy import text
+        statements = [s.strip() for s in sql_script.split(';') if s.strip() and not s.strip().startswith('--')]
+        
+        for statement in statements:
+            if statement:
+                try:
+                    db.session.execute(text(statement))
+                except Exception as e:
+                    pass
+        
+        db.session.commit()
+        print("[EPS] Seed SQL ejecutado correctamente")
+    except Exception as e:
+        db.session.rollback()
+        print(f"[EPS] Seed SQL no ejecutado: {e}")
+
 with app.app_context():
     db.create_all()
     init_default_data()
+    ejecutar_seed_sql()
 
 def validate_email(email):
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
